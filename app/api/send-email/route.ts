@@ -1,7 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 
-// This route will only be used in production
+// Handle HEAD requests (used for preflight checks)
+export async function HEAD() {
+  return new NextResponse(null, { status: 200 })
+}
+
+// Handle POST requests for actual email sending
 export async function POST(request: NextRequest) {
   // Only allow this in production server environment
   if (process.env.NODE_ENV !== "production") {
@@ -53,4 +58,12 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     )
   }
+}
+
+// Also handle GET requests for testing
+export async function GET() {
+  return NextResponse.json({
+    status: "Email service is running",
+    timestamp: new Date().toISOString(),
+  })
 }

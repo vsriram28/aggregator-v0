@@ -2,6 +2,7 @@ import type { NewsDigest, User } from "./db-schema"
 
 // Email template for news digest (keep this function as is)
 function createDigestEmailHtml(user: User, digest: NewsDigest) {
+  // [Keep existing function implementation]
   return `
     <!DOCTYPE html>
     <html>
@@ -53,6 +54,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
 
 // Create confirmation email HTML template (keep this function as is)
 function createConfirmationEmailHtml(user: User) {
+  // [Keep existing function implementation]
   const topicsString = user.preferences.topics.join(", ")
   const sourcesString = user.preferences.sources.join(", ")
   const frequencyText = user.preferences.frequency === "daily" ? "daily" : "weekly"
@@ -104,6 +106,14 @@ function createConfirmationEmailHtml(user: User) {
 
 // Simple email sender that works in both server and client environments
 async function sendEmail(to: string, subject: string, html: string) {
+  // In preview/development mode, just log the email
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Email would be sent to:", to)
+    console.log("Subject:", subject)
+    console.log("HTML content length:", html.length)
+    return { success: true, messageId: "preview-mode" }
+  }
+
   // Check if we're in a server environment where we can use fetch
   if (typeof window === "undefined") {
     try {
