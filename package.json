@@ -61,8 +61,8 @@
     "cron": "latest",
     "ai": "latest",
     "@ai-sdk/google": "latest",
-    "resend": "latest",
-    "@supabase/supabase-js": "latest"
+    "@supabase/supabase-js": "latest",
+    "nodemailer": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

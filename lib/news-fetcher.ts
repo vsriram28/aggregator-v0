@@ -42,8 +42,8 @@ async function fetchFromNewsAPI(query: string, pageSize = 10) {
 }
 
 // Fetch news for multiple topics
-export async function fetchNewsForTopics(topics: string[]) {
-  const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic))
+export async function fetchNewsForTopics(topics: string[], pageSize = 10) {
+  const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, pageSize))
   const articlesArrays = await Promise.all(articlesPromises)
 
   // Flatten and deduplicate articles by URL
