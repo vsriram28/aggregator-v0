@@ -98,13 +98,16 @@ export default function SubscriptionForm() {
         body: JSON.stringify({ email, name, preferences }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || "Subscription failed")
       }
 
-      // Redirect to success page
-      router.push("/success")
+      // Pass the message to the success page
+      router.push(
+        `/success?message=${encodeURIComponent(data.message || "Subscription successful!")}&isUpdate=${data.user && data.message && data.message.includes("updated")}`,
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {

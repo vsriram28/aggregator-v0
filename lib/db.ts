@@ -23,10 +23,18 @@ export async function createUser(email: string, name: string, preferences: UserP
   return data?.[0] as User
 }
 
+// Update the getUserByEmail function to handle not found errors properly
 export async function getUserByEmail(email: string) {
   const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
 
-  if (error) throw error
+  if (error) {
+    if (error.code === "PGRST116") {
+      // PGRST116 is the error code for "Results contain 0 rows"
+      throw new Error("User not found")
+    }
+    throw error
+  }
+
   return data as User
 }
 
