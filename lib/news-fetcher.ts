@@ -21,7 +21,8 @@ type NewsAPIResponse = {
 }
 
 // Fetch news from News API
-async function fetchFromNewsAPI(query: string, pageSize = 10) {
+async function fetchFromNewsAPI(query: string, pageSize = 5) {
+  // Changed default to 5
   const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`
 
   try {
@@ -35,11 +36,15 @@ async function fetchFromNewsAPI(query: string, pageSize = 10) {
 
     const data = (await response.json()) as NewsAPIResponse
 
-    return data.articles.map((article) => ({
+    // Limit to exactly pageSize articles
+    const limitedArticles = data.articles.slice(0, pageSize)
+
+    return limitedArticles.map((article) => ({
       title: article.title,
       url: article.url,
       source: article.source.name,
-      publishedAt: new Date(article.publishedAt), // Ensure we're using publishedAt consistently
+      publishedAt: new Date(article.publishedAt),
+      published_at: new Date(article.publishedAt),
       content: article.content || article.description,
       topics: [query], // Simple topic assignment based on query
     }))
@@ -49,25 +54,36 @@ async function fetchFromNewsAPI(query: string, pageSize = 10) {
   }
 }
 
-// Fetch news for multiple topics
-export async function fetchNewsForTopics(topics: string[], pageSize = 10) {
+// Fetch news for multiple topics with a limit per topic
+export async function fetchNewsForTopics(topics: string[], articlesPerTopic = 5) {
   try {
-    const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, pageSize))
+    console.log(`Fetching news for topics: ${topics.join(", ")} (${articlesPerTopic} articles per topic)`)
+
+    const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, articlesPerTopic))
     const articlesArrays = await Promise.all(articlesPromises)
 
     // Flatten and deduplicate articles by URL
     const articlesMap = new Map()
-    articlesArrays.flat().forEach((article) => {
-      if (!articlesMap.has(article.url)) {
-        articlesMap.set(article.url, article)
-      } else {
-        // Merge topics if article already exists
-        const existingArticle = articlesMap.get(article.url)
-        existingArticle.topics = [...new Set([...existingArticle.topics, ...article.topics])]
-      }
+
+    // Process each topic's articles
+    articlesArrays.forEach((articles, index) => {
+      const topic = topics[index]
+      console.log(`Fetched ${articles.length} articles for topic "${topic}"`)
+
+      // Add each article to the map, preserving topic information
+      articles.forEach((article) => {
+        if (!articlesMap.has(article.url)) {
+          articlesMap.set(article.url, article)
+        } else {
+          // Merge topics if article already exists
+          const existingArticle = articlesMap.get(article.url)
+          existingArticle.topics = [...new Set([...existingArticle.topics, ...article.topics])]
+        }
+      })
     })
 
     const articles = Array.from(articlesMap.values())
+    console.log(`Total unique articles after deduplication: ${articles.length}`)
 
     // Save articles to database
     await saveArticles(articles)
