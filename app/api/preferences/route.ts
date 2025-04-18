@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
 
     const user = await getUserByEmail(email)
 
-    return NextResponse.json({ preferences: user.preferences })
+    return NextResponse.json({
+      preferences: user.preferences,
+      userId: user.id, // Include the userId in the response
+    })
   } catch (error) {
     console.error("Get preferences error:", error)
     return NextResponse.json({ error: "Failed to get preferences" }, { status: 500 })

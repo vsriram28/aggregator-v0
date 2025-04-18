@@ -13,7 +13,8 @@ function getUnsubscribeUrl(email: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
   // Make sure the baseUrl has a protocol
   const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
-  return `${fullBaseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
+  // Point directly to the unsubscribe page, not the API
+  return `${fullBaseUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
 }
 
 // Email template for news digest

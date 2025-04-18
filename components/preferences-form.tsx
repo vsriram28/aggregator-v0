@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
 import type { UserPreferences } from "@/lib/db-schema"
 
 // Available topics and sources (same as subscription form)
@@ -50,6 +52,8 @@ export function PreferencesForm({
   const [success, setSuccess] = useState("")
   const [userEmail, setUserEmail] = useState(email || "")
   const [foundUserId, setFoundUserId] = useState(userId || "")
+  const [unsubscribe, setUnsubscribe] = useState(false)
+  const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
 
   // Preferences state
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
@@ -73,12 +77,16 @@ export function PreferencesForm({
         }
 
         const data = await response.json()
-        const { preferences } = data
+        const { preferences, userId: fetchedUserId } = data
 
         setSelectedTopics(preferences.topics || [])
         setSelectedSources(preferences.sources || [])
         setFrequency(preferences.frequency || "daily")
         setFormat(preferences.format || "short")
+
+        if (fetchedUserId) {
+          setFoundUserId(fetchedUserId)
+        }
 
         setLoading(false)
       } catch (err) {
@@ -110,9 +118,51 @@ export function PreferencesForm({
     }
   }
 
+  // Handle unsubscribe
+  const handleUnsubscribe = async () => {
+    if (!userEmail && !foundUserId) {
+      setError("Email is required to unsubscribe")
+      return
+    }
+
+    setSaving(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      const response = await fetch("/api/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to unsubscribe")
+      }
+
+      setSuccess("You have been successfully unsubscribed from the news digest service.")
+      setUnsubscribeConfirm(true)
+      // Clear form data
+      setSelectedTopics([])
+      setSelectedSources([])
+      setFoundUserId("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (unsubscribe) {
+      handleUnsubscribe()
+      return
+    }
 
     if (selectedTopics.length === 0) {
       setError("Please select at least one topic")
@@ -187,6 +237,30 @@ export function PreferencesForm({
     }
   }
 
+  if (unsubscribeConfirm) {
+    return (
+      <div className="space-y-4">
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Unsubscribed Successfully</AlertTitle>
+          <AlertDescription className="text-green-700">
+            You have been unsubscribed from our news digest service. We're sorry to see you go!
+          </AlertDescription>
+        </Alert>
+
+        <p className="text-center text-gray-600 mt-4">
+          Changed your mind? You can always subscribe again from our homepage.
+        </p>
+
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+            Return to Home
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (!foundUserId && !loading) {
     return (
       <div className="space-y-4">
@@ -206,7 +280,13 @@ export function PreferencesForm({
           </div>
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
       </div>
     )
   }
@@ -217,76 +297,121 @@ export function PreferencesForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label>Topics</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {AVAILABLE_TOPICS.map((topic) => (
-            <div key={topic} className="flex items-center space-x-2">
-              <Checkbox
-                id={`topic-${topic}`}
-                checked={selectedTopics.includes(topic)}
-                onCheckedChange={(checked) => handleTopicChange(topic, checked === true)}
-              />
-              <Label htmlFor={`topic-${topic}`} className="text-sm">
-                {topic}
-              </Label>
+      {!unsubscribe ? (
+        <>
+          <div className="space-y-2">
+            <Label>Topics</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {AVAILABLE_TOPICS.map((topic) => (
+                <div key={topic} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`topic-${topic}`}
+                    checked={selectedTopics.includes(topic)}
+                    onCheckedChange={(checked) => handleTopicChange(topic, checked === true)}
+                  />
+                  <Label htmlFor={`topic-${topic}`} className="text-sm">
+                    {topic}
+                  </Label>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className="space-y-2">
+            <Label>News Sources</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {AVAILABLE_SOURCES.map((source) => (
+                <div key={source} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`source-${source}`}
+                    checked={selectedSources.includes(source)}
+                    onCheckedChange={(checked) => handleSourceChange(source, checked === true)}
+                  />
+                  <Label htmlFor={`source-${source}`} className="text-sm">
+                    {source}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Frequency</Label>
+            <RadioGroup value={frequency} onValueChange={(value) => setFrequency(value as "daily" | "weekly")}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="daily" id="daily" />
+                <Label htmlFor="daily">Daily</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="weekly" id="weekly" />
+                <Label htmlFor="weekly">Weekly</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Format</Label>
+            <RadioGroup value={format} onValueChange={(value) => setFormat(value as "short" | "detailed")}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="short" id="short" />
+                <Label htmlFor="short">Short summaries</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="detailed" id="detailed" />
+                <Label htmlFor="detailed">Detailed analysis</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-4">
+          <Alert className="bg-red-50 border-red-200">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertTitle className="text-red-800">Confirm Unsubscribe</AlertTitle>
+            <AlertDescription className="text-red-700">
+              Are you sure you want to unsubscribe from the news digest service? This action cannot be undone.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      <div className="border-t pt-4">
+        <div className="flex items-center space-x-2 mb-4">
+          <Checkbox
+            id="unsubscribe"
+            checked={unsubscribe}
+            onCheckedChange={(checked) => setUnsubscribe(checked === true)}
+          />
+          <Label htmlFor="unsubscribe" className="font-medium text-red-600">
+            Unsubscribe from news digest service
+          </Label>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>News Sources</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {AVAILABLE_SOURCES.map((source) => (
-            <div key={source} className="flex items-center space-x-2">
-              <Checkbox
-                id={`source-${source}`}
-                checked={selectedSources.includes(source)}
-                onCheckedChange={(checked) => handleSourceChange(source, checked === true)}
-              />
-              <Label htmlFor={`source-${source}`} className="text-sm">
-                {source}
-              </Label>
-            </div>
-          ))}
-        </div>
+      <div className="flex justify-between">
+        <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : unsubscribe ? "Confirm Unsubscribe" : "Save Preferences"}
+        </Button>
       </div>
 
-      <div className="space-y-2">
-        <Label>Frequency</Label>
-        <RadioGroup value={frequency} onValueChange={(value) => setFrequency(value as "daily" | "weekly")}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="daily" id="daily" />
-            <Label htmlFor="daily">Daily</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="weekly" id="weekly" />
-            <Label htmlFor="weekly">Weekly</Label>
-          </div>
-        </RadioGroup>
-      </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-      <div className="space-y-2">
-        <Label>Format</Label>
-        <RadioGroup value={format} onValueChange={(value) => setFormat(value as "short" | "detailed")}>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="short" id="short" />
-            <Label htmlFor="short">Short summaries</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="detailed" id="detailed" />
-            <Label htmlFor="detailed">Detailed analysis</Label>
-          </div>
-        </RadioGroup>
-      </div>
-
-      <Button type="submit" disabled={saving}>
-        {saving ? "Saving..." : "Save Preferences"}
-      </Button>
-
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {success && <p className="text-green-500 text-sm">{success}</p>}
+      {success && !unsubscribeConfirm && (
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-800">Success</AlertTitle>
+          <AlertDescription className="text-green-700">{success}</AlertDescription>
+        </Alert>
+      )}
     </form>
   )
 }
