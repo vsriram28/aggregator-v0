@@ -23,7 +23,8 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
   // Make sure the baseUrl has a protocol
   const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
-  const preferencesUrl = `${fullBaseUrl}/preferences?userId=${user.id}`
+  // Include both userId and email in the preferences URL
+  const preferencesUrl = `${fullBaseUrl}/preferences?userId=${user.id}&email=${encodeURIComponent(user.email)}`
 
   // Log the URLs for debugging
   console.log("Digest Email - Preferences URL:", preferencesUrl)
@@ -74,11 +75,11 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
       
       <div class="footer">
         <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
-        <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer">click here</a> (${preferencesUrl}).</p>
+        <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer">click here</a>.</p>
       </div>
       
       <div class="unsubscribe">
-        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a> (${unsubscribeUrl}).</p>
+        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
       </div>
     </body>
     </html>
@@ -91,7 +92,8 @@ function createConfirmationEmailHtml(user: User) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
   // Make sure the baseUrl has a protocol
   const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
-  const preferencesUrl = `${fullBaseUrl}/preferences?userId=${user.id}`
+  // Include both userId and email in the preferences URL
+  const preferencesUrl = `${fullBaseUrl}/preferences?userId=${user.id}&email=${encodeURIComponent(user.email)}`
 
   // Log the URLs for debugging
   console.log("Confirmation Email - Preferences URL:", preferencesUrl)
@@ -142,7 +144,7 @@ function createConfirmationEmailHtml(user: User) {
       <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
       
       <div class="footer">
-        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a> (${unsubscribeUrl}).</p>
+        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
       </div>
       
     </body>

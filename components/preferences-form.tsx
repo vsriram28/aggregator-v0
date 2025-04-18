@@ -73,7 +73,16 @@ export function PreferencesForm({
       try {
         console.log("Fetching preferences for:", userEmail || foundUserId)
 
-        const response = await fetch(`/api/preferences?email=${encodeURIComponent(userEmail)}`)
+        // Make sure we're using the email parameter correctly
+        const queryParam = userEmail ? `email=${encodeURIComponent(userEmail)}` : ""
+
+        if (!queryParam) {
+          setError("Email is required to fetch preferences")
+          setLoading(false)
+          return
+        }
+
+        const response = await fetch(`/api/preferences?${queryParam}`)
         const responseText = await response.text()
 
         try {
@@ -247,7 +256,10 @@ export function PreferencesForm({
     setDebugInfo(null)
 
     try {
-      const response = await fetch(`/api/preferences?email=${encodeURIComponent(userEmail)}`)
+      const queryParam = `email=${encodeURIComponent(userEmail)}`
+      console.log("Looking up user with query:", queryParam)
+
+      const response = await fetch(`/api/preferences?${queryParam}`)
       const responseText = await response.text()
 
       try {

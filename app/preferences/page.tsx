@@ -8,6 +8,9 @@ export default function PreferencesPage({
 }) {
   const { userId, email } = searchParams
 
+  // Log the parameters for debugging
+  console.log("Preferences page params:", { userId, email })
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
