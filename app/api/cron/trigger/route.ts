@@ -65,10 +65,14 @@ export async function GET(request: Request) {
     }
   } catch (error) {
     console.error("Error triggering digest:", error)
+
+    // Return more detailed error information
     return NextResponse.json(
       {
         error: "Failed to trigger digest",
         message: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        details: JSON.stringify(error),
         timestamp: new Date().toISOString(),
       },
       { status: 500 },

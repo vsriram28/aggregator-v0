@@ -46,11 +46,30 @@ export async function updateUserPreferences(userId: string, preferences: Partial
 }
 
 // News article management
+// Update the saveArticles function to ensure it uses publishedAt consistently
 export async function saveArticles(articles: Omit<NewsArticle, "id">[]) {
-  const { data, error } = await supabase.from("articles").insert(articles).select()
+  try {
+    const { data, error } = await supabase
+      .from("articles")
+      .insert(
+        articles.map((article) => ({
+          title: article.title,
+          url: article.url,
+          source: article.source,
+          publishedAt: article.publishedAt, // Ensure we're using publishedAt consistently
+          content: article.content,
+          topics: article.topics,
+          summary: article.summary,
+        })),
+      )
+      .select()
 
-  if (error) throw error
-  return data as NewsArticle[]
+    if (error) throw error
+    return data as NewsArticle[]
+  } catch (error) {
+    console.error("Error saving articles:", error)
+    throw error
+  }
 }
 
 export async function getArticlesByTopics(topics: string[], limit = 20) {

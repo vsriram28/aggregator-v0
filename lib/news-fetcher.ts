@@ -23,45 +23,58 @@ type NewsAPIResponse = {
 // Fetch news from News API
 async function fetchFromNewsAPI(query: string, pageSize = 10) {
   const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`
-  const response = await fetch(url)
 
-  if (!response.ok) {
-    throw new Error(`News API error: ${response.statusText}`)
+  try {
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`News API error (${response.status}): ${errorText}`)
+      throw new Error(`News API error (${response.status}): ${response.statusText}`)
+    }
+
+    const data = (await response.json()) as NewsAPIResponse
+
+    return data.articles.map((article) => ({
+      title: article.title,
+      url: article.url,
+      source: article.source.name,
+      publishedAt: new Date(article.publishedAt), // Ensure we're using publishedAt consistently
+      content: article.content || article.description,
+      topics: [query], // Simple topic assignment based on query
+    }))
+  } catch (error) {
+    console.error(`Error fetching news for query "${query}":`, error)
+    throw error
   }
-
-  const data = (await response.json()) as NewsAPIResponse
-
-  return data.articles.map((article) => ({
-    title: article.title,
-    url: article.url,
-    source: article.source.name,
-    publishedAt: new Date(article.publishedAt),
-    content: article.content || article.description,
-    topics: [query], // Simple topic assignment based on query
-  }))
 }
 
 // Fetch news for multiple topics
 export async function fetchNewsForTopics(topics: string[], pageSize = 10) {
-  const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, pageSize))
-  const articlesArrays = await Promise.all(articlesPromises)
+  try {
+    const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, pageSize))
+    const articlesArrays = await Promise.all(articlesPromises)
 
-  // Flatten and deduplicate articles by URL
-  const articlesMap = new Map()
-  articlesArrays.flat().forEach((article) => {
-    if (!articlesMap.has(article.url)) {
-      articlesMap.set(article.url, article)
-    } else {
-      // Merge topics if article already exists
-      const existingArticle = articlesMap.get(article.url)
-      existingArticle.topics = [...new Set([...existingArticle.topics, ...article.topics])]
-    }
-  })
+    // Flatten and deduplicate articles by URL
+    const articlesMap = new Map()
+    articlesArrays.flat().forEach((article) => {
+      if (!articlesMap.has(article.url)) {
+        articlesMap.set(article.url, article)
+      } else {
+        // Merge topics if article already exists
+        const existingArticle = articlesMap.get(article.url)
+        existingArticle.topics = [...new Set([...existingArticle.topics, ...article.topics])]
+      }
+    })
 
-  const articles = Array.from(articlesMap.values())
+    const articles = Array.from(articlesMap.values())
 
-  // Save articles to database
-  await saveArticles(articles)
+    // Save articles to database
+    await saveArticles(articles)
 
-  return articles as NewsArticle[]
+    return articles as NewsArticle[]
+  } catch (error) {
+    console.error("Error in fetchNewsForTopics:", error)
+    throw error
+  }
 }
