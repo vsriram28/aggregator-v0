@@ -1,8 +1,23 @@
 import type { NewsDigest, User } from "./db-schema"
+import { createHash } from "crypto"
 
-// Email template for news digest (keep this function as is)
+// Generate a simple unsubscribe token based on email and a secret
+function generateUnsubscribeToken(email: string): string {
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || "news-digest-secret"
+  return createHash("sha256").update(`${email}:${secret}`).digest("hex").substring(0, 32)
+}
+
+// Get the unsubscribe URL for a user
+function getUnsubscribeUrl(email: string): string {
+  const token = generateUnsubscribeToken(email)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
+  return `${baseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
+}
+
+// Email template for news digest
 function createDigestEmailHtml(user: User, digest: NewsDigest) {
-  // [Keep existing function implementation]
+  const unsubscribeUrl = getUnsubscribeUrl(user.email)
+
   return `
     <!DOCTYPE html>
     <html>
@@ -20,6 +35,9 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
         .article-link { color: #3498db; text-decoration: none; }
         .article-link:hover { text-decoration: underline; }
         .footer { margin-top: 30px; font-size: 0.9em; color: #7f8c8d; }
+        .unsubscribe { margin-top: 20px; font-size: 0.8em; color: #95a5a6; text-align: center; }
+        .unsubscribe a { color: #95a5a6; text-decoration: none; }
+        .unsubscribe a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -45,16 +63,20 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
       
       <div class="footer">
         <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
-        <p>To update your preferences or unsubscribe, <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}">click here</a>.</p>
+        <p>To update your preferences, <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}">click here</a>.</p>
+      </div>
+      
+      <div class="unsubscribe">
+        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}">unsubscribe here</a>.</p>
       </div>
     </body>
     </html>
   `
 }
 
-// Create confirmation email HTML template (keep this function as is)
+// Create confirmation email HTML template
 function createConfirmationEmailHtml(user: User) {
-  // [Keep existing function implementation]
+  const unsubscribeUrl = getUnsubscribeUrl(user.email)
   const topicsString = user.preferences.topics.join(", ")
   const sourcesString = user.preferences.sources.join(", ")
   const frequencyText = user.preferences.frequency === "daily" ? "daily" : "weekly"
@@ -74,6 +96,9 @@ function createConfirmationEmailHtml(user: User) {
         .preferences ul { margin-bottom: 0; }
         .button { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
         .footer { margin-top: 30px; font-size: 0.9em; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 15px; }
+        .unsubscribe { margin-top: 20px; font-size: 0.8em; color: #95a5a6; text-align: center; }
+        .unsubscribe a { color: #95a5a6; text-decoration: none; }
+        .unsubscribe a:hover { text-decoration: underline; }
       </style>
     </head>
     <body>
@@ -97,7 +122,11 @@ function createConfirmationEmailHtml(user: User) {
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}" class="button">Manage Your Preferences</a>
       
       <div class="footer">
-        <p>If you didn't sign up for this service, please ignore this email or <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${user.email}">unsubscribe</a>.</p>
+        <p>If you didn't sign up for this service, please ignore this email or <a href="${unsubscribeUrl}">unsubscribe</a>.</p>
+      </div>
+      
+      <div class="unsubscribe">
+        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}">unsubscribe here</a>.</p>
       </div>
     </body>
     </html>
@@ -198,3 +227,6 @@ export async function sendConfirmationEmail(user: User) {
     return { success: false }
   }
 }
+
+// Export the token generation function for use in other files
+export { generateUnsubscribeToken, getUnsubscribeUrl }
