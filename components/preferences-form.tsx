@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +46,7 @@ export function PreferencesForm({
   userId?: string
   email?: string
 }) {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -54,7 +55,6 @@ export function PreferencesForm({
   const [foundUserId, setFoundUserId] = useState(userId || "")
   const [unsubscribe, setUnsubscribe] = useState(false)
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   // Preferences state
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
@@ -83,43 +83,31 @@ export function PreferencesForm({
         }
 
         const response = await fetch(`/api/preferences?${queryParam}`)
-        const responseText = await response.text()
 
-        try {
-          // Try to parse as JSON
-          const data = JSON.parse(responseText)
-          setDebugInfo({
-            status: response.status,
-            statusText: response.statusText,
-            data,
-          })
-
-          if (!response.ok) {
-            throw new Error(data.error || "Failed to fetch preferences")
+        if (!response.ok) {
+          // If user not found (404), redirect to home page
+          if (response.status === 404) {
+            console.log("User not found, redirecting to home")
+            router.push("/")
+            return
           }
 
-          const { preferences, userId: fetchedUserId } = data
+          throw new Error(`Failed to fetch preferences: ${response.statusText}`)
+        }
 
-          if (!preferences) {
-            throw new Error("No preferences found in response")
-          }
+        const data = await response.json()
 
-          setSelectedTopics(preferences.topics || [])
-          setSelectedSources(preferences.sources || [])
-          setFrequency(preferences.frequency || "daily")
-          setFormat(preferences.format || "short")
+        if (!data.preferences) {
+          throw new Error("No preferences found in response")
+        }
 
-          if (fetchedUserId) {
-            setFoundUserId(fetchedUserId)
-          }
-        } catch (parseError) {
-          // If JSON parsing fails, show the raw response
-          setDebugInfo({
-            status: response.status,
-            statusText: response.statusText,
-            rawResponse: responseText,
-          })
-          throw new Error("Invalid response format")
+        setSelectedTopics(data.preferences.topics || [])
+        setSelectedSources(data.preferences.sources || [])
+        setFrequency(data.preferences.frequency || "daily")
+        setFormat(data.preferences.format || "short")
+
+        if (data.userId) {
+          setFoundUserId(data.userId)
         }
 
         setLoading(false)
@@ -137,7 +125,7 @@ export function PreferencesForm({
     } else {
       setLoading(false)
     }
-  }, [userEmail, foundUserId])
+  }, [userEmail, foundUserId, router])
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -253,48 +241,34 @@ export function PreferencesForm({
 
     setLoading(true)
     setError("")
-    setDebugInfo(null)
 
     try {
       const queryParam = `email=${encodeURIComponent(userEmail)}`
       console.log("Looking up user with query:", queryParam)
 
       const response = await fetch(`/api/preferences?${queryParam}`)
-      const responseText = await response.text()
 
-      try {
-        // Try to parse as JSON
-        const data = JSON.parse(responseText)
-        setDebugInfo({
-          status: response.status,
-          statusText: response.statusText,
-          data,
-        })
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch preferences")
+      if (!response.ok) {
+        // If user not found (404), show appropriate error
+        if (response.status === 404) {
+          throw new Error(`User with email ${userEmail} not found`)
         }
 
-        const { preferences, userId } = data
-
-        if (!preferences) {
-          throw new Error("No preferences found in response")
-        }
-
-        setFoundUserId(userId)
-        setSelectedTopics(preferences.topics || [])
-        setSelectedSources(preferences.sources || [])
-        setFrequency(preferences.frequency || "daily")
-        setFormat(preferences.format || "short")
-      } catch (parseError) {
-        // If JSON parsing fails, show the raw response
-        setDebugInfo({
-          status: response.status,
-          statusText: response.statusText,
-          rawResponse: responseText,
-        })
-        throw new Error("Invalid response format")
+        const data = await response.json()
+        throw new Error(data.error || "Failed to fetch preferences")
       }
+
+      const data = await response.json()
+
+      if (!data.preferences) {
+        throw new Error("No preferences found in response")
+      }
+
+      setFoundUserId(data.userId)
+      setSelectedTopics(data.preferences.topics || [])
+      setSelectedSources(data.preferences.sources || [])
+      setFrequency(data.preferences.frequency || "daily")
+      setFormat(data.preferences.format || "short")
     } catch (err) {
       console.error("Error looking up user:", err)
       setError(`User not found. Please check your email address. ${err instanceof Error ? err.message : ""}`)
@@ -319,7 +293,7 @@ export function PreferencesForm({
         </p>
 
         <div className="flex justify-center mt-4">
-          <Button variant="outline" onClick={() => (window.location.href = "/")}>
+          <Button variant="outline" onClick={() => router.push("/")}>
             Return to Home
           </Button>
         </div>
@@ -352,13 +326,6 @@ export function PreferencesForm({
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        )}
-
-        {debugInfo && (
-          <div className="mt-4 p-4 bg-gray-100 rounded-md text-xs overflow-auto">
-            <p className="font-bold">Debug Information:</p>
-            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-          </div>
         )}
       </div>
     )
@@ -462,7 +429,7 @@ export function PreferencesForm({
       </div>
 
       <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={() => (window.location.href = "/")}>
+        <Button type="button" variant="outline" onClick={() => router.push("/")}>
           Cancel
         </Button>
         <Button type="submit" disabled={saving}>
@@ -484,13 +451,6 @@ export function PreferencesForm({
           <AlertTitle className="text-green-800">Success</AlertTitle>
           <AlertDescription className="text-green-700">{success}</AlertDescription>
         </Alert>
-      )}
-
-      {debugInfo && (
-        <div className="mt-4 p-4 bg-gray-100 rounded-md text-xs overflow-auto">
-          <p className="font-bold">Debug Information:</p>
-          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-        </div>
       )}
     </form>
   )
