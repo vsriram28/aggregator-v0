@@ -62,8 +62,8 @@
     "nodemailer": "latest",
     "ai": "latest",
     "@ai-sdk/google": "latest",
-    "@supabase/supabase-js": "latest",
-    "crypto": "latest"
+    "crypto": "latest",
+    "@supabase/supabase-js": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

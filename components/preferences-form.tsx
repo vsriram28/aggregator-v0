@@ -54,6 +54,7 @@ export function PreferencesForm({
   const [foundUserId, setFoundUserId] = useState(userId || "")
   const [unsubscribe, setUnsubscribe] = useState(false)
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   // Preferences state
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
@@ -70,33 +71,62 @@ export function PreferencesForm({
       }
 
       try {
-        const response = await fetch(`/api/preferences?email=${userEmail}`)
+        console.log("Fetching preferences for:", userEmail || foundUserId)
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch preferences")
-        }
+        const response = await fetch(`/api/preferences?email=${encodeURIComponent(userEmail)}`)
+        const responseText = await response.text()
 
-        const data = await response.json()
-        const { preferences, userId: fetchedUserId } = data
+        try {
+          // Try to parse as JSON
+          const data = JSON.parse(responseText)
+          setDebugInfo({
+            status: response.status,
+            statusText: response.statusText,
+            data,
+          })
 
-        setSelectedTopics(preferences.topics || [])
-        setSelectedSources(preferences.sources || [])
-        setFrequency(preferences.frequency || "daily")
-        setFormat(preferences.format || "short")
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to fetch preferences")
+          }
 
-        if (fetchedUserId) {
-          setFoundUserId(fetchedUserId)
+          const { preferences, userId: fetchedUserId } = data
+
+          if (!preferences) {
+            throw new Error("No preferences found in response")
+          }
+
+          setSelectedTopics(preferences.topics || [])
+          setSelectedSources(preferences.sources || [])
+          setFrequency(preferences.frequency || "daily")
+          setFormat(preferences.format || "short")
+
+          if (fetchedUserId) {
+            setFoundUserId(fetchedUserId)
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, show the raw response
+          setDebugInfo({
+            status: response.status,
+            statusText: response.statusText,
+            rawResponse: responseText,
+          })
+          throw new Error("Invalid response format")
         }
 
         setLoading(false)
       } catch (err) {
-        setError("Could not load preferences. Please check your email address.")
+        console.error("Error fetching preferences:", err)
+        setError(
+          `Could not load preferences. Please check your email address. ${err instanceof Error ? err.message : ""}`,
+        )
         setLoading(false)
       }
     }
 
     if (userEmail || foundUserId) {
       fetchPreferences()
+    } else {
+      setLoading(false)
     }
   }, [userEmail, foundUserId])
 
@@ -214,24 +244,48 @@ export function PreferencesForm({
 
     setLoading(true)
     setError("")
+    setDebugInfo(null)
 
     try {
-      const response = await fetch(`/api/preferences?email=${userEmail}`)
+      const response = await fetch(`/api/preferences?email=${encodeURIComponent(userEmail)}`)
+      const responseText = await response.text()
 
-      if (!response.ok) {
-        throw new Error("User not found")
+      try {
+        // Try to parse as JSON
+        const data = JSON.parse(responseText)
+        setDebugInfo({
+          status: response.status,
+          statusText: response.statusText,
+          data,
+        })
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to fetch preferences")
+        }
+
+        const { preferences, userId } = data
+
+        if (!preferences) {
+          throw new Error("No preferences found in response")
+        }
+
+        setFoundUserId(userId)
+        setSelectedTopics(preferences.topics || [])
+        setSelectedSources(preferences.sources || [])
+        setFrequency(preferences.frequency || "daily")
+        setFormat(preferences.format || "short")
+      } catch (parseError) {
+        // If JSON parsing fails, show the raw response
+        setDebugInfo({
+          status: response.status,
+          statusText: response.statusText,
+          rawResponse: responseText,
+        })
+        throw new Error("Invalid response format")
       }
-
-      const data = await response.json()
-      const { preferences, userId } = data
-
-      setFoundUserId(userId)
-      setSelectedTopics(preferences.topics || [])
-      setSelectedSources(preferences.sources || [])
-      setFrequency(preferences.frequency || "daily")
-      setFormat(preferences.format || "short")
     } catch (err) {
-      setError("User not found. Please check your email address.")
+      console.error("Error looking up user:", err)
+      setError(`User not found. Please check your email address. ${err instanceof Error ? err.message : ""}`)
     } finally {
       setLoading(false)
     }
@@ -286,6 +340,13 @@ export function PreferencesForm({
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+
+        {debugInfo && (
+          <div className="mt-4 p-4 bg-gray-100 rounded-md text-xs overflow-auto">
+            <p className="font-bold">Debug Information:</p>
+            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
         )}
       </div>
     )
@@ -411,6 +472,13 @@ export function PreferencesForm({
           <AlertTitle className="text-green-800">Success</AlertTitle>
           <AlertDescription className="text-green-700">{success}</AlertDescription>
         </Alert>
+      )}
+
+      {debugInfo && (
+        <div className="mt-4 p-4 bg-gray-100 rounded-md text-xs overflow-auto">
+          <p className="font-bold">Debug Information:</p>
+          <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+        </div>
       )}
     </form>
   )

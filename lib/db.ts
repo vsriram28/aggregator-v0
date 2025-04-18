@@ -25,17 +25,30 @@ export async function createUser(email: string, name: string, preferences: UserP
 
 // Update the getUserByEmail function to handle not found errors properly
 export async function getUserByEmail(email: string) {
-  const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
+  console.log(`Looking up user with email: ${email}`)
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      // PGRST116 is the error code for "Results contain 0 rows"
-      throw new Error("User not found")
+  try {
+    const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
+
+    if (error) {
+      console.error(`Error fetching user by email ${email}:`, error)
+      if (error.code === "PGRST116") {
+        // PGRST116 is the error code for "Results contain 0 rows"
+        throw new Error(`User not found with email: ${email}`)
+      }
+      throw error
     }
+
+    if (!data) {
+      throw new Error(`No data returned for email: ${email}`)
+    }
+
+    console.log(`Found user: ${data.id} with preferences:`, data.preferences)
+    return data as User
+  } catch (error) {
+    console.error(`Error in getUserByEmail for ${email}:`, error)
     throw error
   }
-
-  return data as User
 }
 
 export async function updateUserPreferences(userId: string, preferences: Partial<UserPreferences>) {
@@ -46,6 +59,7 @@ export async function updateUserPreferences(userId: string, preferences: Partial
 }
 
 // News article management
+// Update the saveArticles function to be more robust with column handling
 export async function saveArticles(articles: Omit<NewsArticle, "id">[]) {
   try {
     // First, check if any articles with the same URLs already exist
