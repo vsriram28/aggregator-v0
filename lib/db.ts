@@ -116,9 +116,23 @@ export async function getArticlesByTopics(topics: string[], limit = 20) {
 }
 
 // Digest management
+// Update saveDigest to handle both createdAt and created_at
 export async function saveDigest(digest: Omit<NewsDigest, "id">) {
   try {
-    const { data, error } = await supabase.from("digests").insert([digest]).select()
+    const now = new Date()
+    const { data, error } = await supabase
+      .from("digests")
+      .insert([
+        {
+          userId: digest.userId,
+          user_id: digest.userId, // Ensure both column names are populated
+          createdAt: now,
+          created_at: now, // Ensure both column names are populated
+          articles: digest.articles,
+          summary: digest.summary,
+        },
+      ])
+      .select()
 
     if (error) throw error
     return data?.[0] as NewsDigest
@@ -133,8 +147,8 @@ export async function getDigestsByUserId(userId: string, limit = 10) {
     const { data, error } = await supabase
       .from("digests")
       .select("*")
-      .eq("userId", userId)
-      .order("createdAt", { ascending: false })
+      .eq("user_id", userId) // Use user_id instead of userId to match the column name
+      .order("created_at", { ascending: false }) // Use created_at instead of createdAt
       .limit(limit)
 
     if (error) throw error

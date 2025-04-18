@@ -2,6 +2,28 @@ import { generateText } from "ai"
 import { google } from "@ai-sdk/google"
 import type { NewsArticle, UserPreferences } from "./db-schema"
 
+// Get the API key from multiple possible environment variables
+const getGoogleApiKey = () => {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY
+
+  if (!apiKey) {
+    console.error("No Google API key found in environment variables")
+    throw new Error("Google Generative AI API key is missing")
+  }
+
+  return apiKey
+}
+
+// Create a model with explicit API key
+const getGoogleModel = (modelName = "gemini-1.5-flash") => {
+  try {
+    return google(modelName, { apiKey: getGoogleApiKey() })
+  } catch (error) {
+    console.error("Error creating Google model:", error)
+    throw error
+  }
+}
+
 // Add better error handling to the summarizeArticle function
 export async function summarizeArticle(article: NewsArticle) {
   const prompt = `
@@ -16,7 +38,7 @@ export async function summarizeArticle(article: NewsArticle) {
 
   try {
     const { text } = await generateText({
-      model: google("gemini-1.5-flash"),
+      model: getGoogleModel(),
       prompt,
     })
 
@@ -59,7 +81,7 @@ export async function generatePersonalizedDigest(articles: NewsArticle[], prefer
 
     try {
       const { text: introduction } = await generateText({
-        model: google("gemini-1.5-flash"),
+        model: getGoogleModel(),
         prompt,
       })
 
