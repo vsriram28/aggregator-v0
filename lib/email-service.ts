@@ -17,6 +17,8 @@ function getUnsubscribeUrl(email: string): string {
 // Email template for news digest
 function createDigestEmailHtml(user: User, digest: NewsDigest) {
   const unsubscribeUrl = getUnsubscribeUrl(user.email)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
+  const preferencesUrl = `${baseUrl}/preferences?userId=${user.id}`
 
   return `
     <!DOCTYPE html>
@@ -63,11 +65,11 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
       
       <div class="footer">
         <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
-        <p>To update your preferences, <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}">click here</a>.</p>
+        <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer">click here</a>.</p>
       </div>
       
       <div class="unsubscribe">
-        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}">unsubscribe here</a>.</p>
+        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
       </div>
     </body>
     </html>
@@ -77,6 +79,9 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
 // Create confirmation email HTML template
 function createConfirmationEmailHtml(user: User) {
   const unsubscribeUrl = getUnsubscribeUrl(user.email)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
+  const preferencesUrl = `${baseUrl}/preferences?userId=${user.id}`
+
   const topicsString = user.preferences.topics.join(", ")
   const sourcesString = user.preferences.sources.join(", ")
   const frequencyText = user.preferences.frequency === "daily" ? "daily" : "weekly"
@@ -119,15 +124,12 @@ function createConfirmationEmailHtml(user: User) {
       
       <p>Your first digest will be delivered ${user.preferences.frequency === "daily" ? "tomorrow" : "next week"}. We hope you'll find the content valuable and relevant to your interests.</p>
       
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}" class="button">Manage Your Preferences</a>
+      <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
       
       <div class="footer">
-        <p>If you didn't sign up for this service, please ignore this email or <a href="${unsubscribeUrl}">unsubscribe</a>.</p>
+        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
       </div>
       
-      <div class="unsubscribe">
-        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}">unsubscribe here</a>.</p>
-      </div>
     </body>
     </html>
   `
