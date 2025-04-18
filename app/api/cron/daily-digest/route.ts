@@ -11,13 +11,26 @@ export async function GET() {
     const users = await getUsersByFrequency("daily")
     console.log(`Processing daily digests for ${users.length} users`)
 
+    if (users.length === 0) {
+      return NextResponse.json({
+        message: "No users found with daily frequency preference",
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     let successCount = 0
     let errorCount = 0
+    const errors: any[] = []
 
     for (const user of users) {
       try {
         // Fetch news based on user preferences
         const articles = await fetchNewsForTopics(user.preferences.topics)
+
+        if (articles.length === 0) {
+          console.log(`No articles found for user ${user.id} with topics: ${user.preferences.topics.join(", ")}`)
+          continue
+        }
 
         // Generate personalized digest
         const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
@@ -41,6 +54,11 @@ export async function GET() {
       } catch (error) {
         console.error(`Error processing digest for user ${user.id}:`, error)
         errorCount++
+        errors.push({
+          userId: user.id,
+          email: user.email,
+          error: error instanceof Error ? error.message : String(error),
+        })
       }
     }
 
@@ -49,6 +67,7 @@ export async function GET() {
       processed: users.length,
       successful: successCount,
       failed: errorCount,
+      errors: errors.length > 0 ? errors : undefined,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

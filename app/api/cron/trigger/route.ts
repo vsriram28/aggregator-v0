@@ -15,30 +15,54 @@ export async function GET(request: Request) {
     }
 
     // Get user by email
-    const user = await getUserByEmail(email)
+    try {
+      const user = await getUserByEmail(email)
 
-    // Fetch news based on user preferences
-    const articles = await fetchNewsForTopics(user.preferences.topics)
+      // Fetch news based on user preferences
+      const articles = await fetchNewsForTopics(user.preferences.topics)
 
-    // Generate personalized digest
-    const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(articles, user.preferences)
+      if (articles.length === 0) {
+        return NextResponse.json({
+          warning: `No articles found for topics: ${user.preferences.topics.join(", ")}`,
+          timestamp: new Date().toISOString(),
+        })
+      }
 
-    // Save digest to database
-    const digest = await saveDigest({
-      userId: user.id,
-      createdAt: new Date(),
-      articles: summarizedArticles,
-      summary: introduction,
-    })
+      // Generate personalized digest
+      const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
+        articles,
+        user.preferences,
+      )
 
-    // Send email
-    await sendDigestEmail(user, digest)
+      // Save digest to database
+      const digest = await saveDigest({
+        userId: user.id,
+        createdAt: new Date(),
+        articles: summarizedArticles,
+        summary: introduction,
+      })
 
-    return NextResponse.json({
-      success: true,
-      message: `Digest generated and sent to ${email}`,
-      timestamp: new Date().toISOString(),
-    })
+      // Send email
+      await sendDigestEmail(user, digest)
+
+      return NextResponse.json({
+        success: true,
+        message: `Digest generated and sent to ${email}`,
+        articleCount: summarizedArticles.length,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("User not found")) {
+        return NextResponse.json(
+          {
+            error: `User with email ${email} not found`,
+            timestamp: new Date().toISOString(),
+          },
+          { status: 404 },
+        )
+      }
+      throw error
+    }
   } catch (error) {
     console.error("Error triggering digest:", error)
     return NextResponse.json(
