@@ -107,8 +107,14 @@ async function sendEmail(to: string, subject: string, html: string) {
   // Check if we're in a server environment where we can use fetch
   if (typeof window === "undefined") {
     try {
+      // Get the base URL with protocol
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
+
+      // Make sure we have a proper URL with protocol
+      const apiUrl = baseUrl.startsWith("http") ? `${baseUrl}/api/send-email` : `https://${baseUrl}/api/send-email`
+
       // Use a simple API-based approach instead of Nodemailer
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/send-email`, {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
