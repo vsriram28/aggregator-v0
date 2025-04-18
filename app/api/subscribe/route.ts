@@ -68,32 +68,45 @@ export async function POST(request: NextRequest) {
       // Continue even if email fails - don't fail the whole request
     }
 
-    // For new users, generate and send an immediate digest
+    // For new users, schedule the welcome digest with a delay
     if (isNewUser) {
       try {
-        console.log(`Triggering immediate welcome digest for new user: ${user.email}`)
+        console.log(`Scheduling welcome digest for new user: ${user.email} with a 60-second delay`)
 
-        // Create a separate endpoint call to handle the digest generation
-        // This ensures the API response isn't delayed while waiting for the digest
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
         const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
-        const digestUrl = `${fullBaseUrl}/api/digest/welcome`
 
-        // Make a non-blocking request to the welcome digest endpoint
-        fetch(digestUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId: user.id }),
-        }).catch((error) => {
-          console.error("Error triggering welcome digest:", error)
-        })
+        // Schedule the welcome digest with a 60-second delay
+        const welcomeDigestUrl = `${fullBaseUrl}/api/digest/welcome`
 
-        console.log(`Welcome digest triggered for user: ${user.email}`)
-      } catch (digestError) {
-        console.error("Error scheduling immediate digest:", digestError)
-        // Continue even if immediate digest fails - don't fail the whole request
+        // Use setTimeout to delay the welcome digest
+        setTimeout(async () => {
+          try {
+            console.log(`Executing delayed welcome digest for user: ${user.email}`)
+
+            const response = await fetch(welcomeDigestUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ userId: user.id }),
+            })
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error(`Failed to send welcome digest: ${response.status} ${response.statusText}`, errorText)
+            } else {
+              console.log(`Welcome digest successfully triggered for user: ${user.email}`)
+            }
+          } catch (error) {
+            console.error(`Error executing welcome digest for user ${user.email}:`, error)
+          }
+        }, 60000) // 60 seconds delay
+
+        console.log(`Welcome digest scheduled for user: ${user.email}`)
+      } catch (scheduleError) {
+        console.error("Error scheduling welcome digest:", scheduleError)
+        // Continue even if scheduling fails - don't fail the whole request
       }
     }
 

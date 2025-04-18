@@ -17,6 +17,37 @@ function getUnsubscribeUrl(email: string): string {
   return `${fullBaseUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
 }
 
+// Get the next digest date based on frequency
+function getNextDigestDate(frequency: "daily" | "weekly"): Date {
+  const now = new Date()
+  const nextDigest = new Date(now)
+
+  if (frequency === "daily") {
+    // Set to 8:00 AM tomorrow
+    nextDigest.setDate(nextDigest.getDate() + 1)
+    nextDigest.setHours(8, 0, 0, 0)
+  } else {
+    // Set to next Sunday at 9:00 AM
+    const daysUntilSunday = 7 - now.getDay()
+    nextDigest.setDate(nextDigest.getDate() + daysUntilSunday)
+    nextDigest.setHours(9, 0, 0, 0)
+  }
+
+  return nextDigest
+}
+
+// Format date in a user-friendly way
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 // Email template for news digest
 function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest = false) {
   const unsubscribeUrl = getUnsubscribeUrl(user.email)
@@ -30,14 +61,17 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
   console.log("Digest Email - Preferences URL:", preferencesUrl)
   console.log("Digest Email - Unsubscribe URL:", unsubscribeUrl)
 
+  // Calculate next digest date for welcome digests
+  const nextDigestInfo = isWelcomeDigest
+    ? `<p>Your next regular digest will be sent on <strong>${formatDate(getNextDigestDate(user.preferences.frequency))}</strong> and will continue on your chosen ${user.preferences.frequency} schedule.</p>`
+    : ""
+
   // Add a welcome message for welcome digests
   const welcomeHeader = isWelcomeDigest
     ? `
       <div style="background-color: #f0f7ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #3498db;">
         <h2 style="color: #3498db; margin-top: 0;">Welcome to News Digest!</h2>
-        <p>This is your first personalized digest. Future digests will arrive on your chosen ${
-          user.preferences.frequency
-        } schedule.</p>
+        <p>This is your first personalized digest. ${nextDigestInfo}</p>
       </div>
     `
     : ""
@@ -109,6 +143,10 @@ function createConfirmationEmailHtml(user: User) {
   // Include both userId and email in the preferences URL
   const preferencesUrl = `${fullBaseUrl}/preferences?userId=${user.id}&email=${encodeURIComponent(user.email)}`
 
+  // Calculate next digest date
+  const nextRegularDigest = getNextDigestDate(user.preferences.frequency)
+  const nextDigestInfo = `Your first regular digest will be sent on <strong>${formatDate(nextRegularDigest)}</strong> and will continue on your chosen ${user.preferences.frequency} schedule.`
+
   // Log the URLs for debugging
   console.log("Confirmation Email - Preferences URL:", preferencesUrl)
   console.log("Confirmation Email - Unsubscribe URL:", unsubscribeUrl)
@@ -145,7 +183,8 @@ function createConfirmationEmailHtml(user: User) {
       <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed!</p>
       
       <div class="highlight">
-        <p><strong>Your first digest is being prepared and will be delivered shortly.</strong> After that, regular digests will arrive according to your chosen schedule.</p>
+        <p><strong>Your welcome digest is being prepared and will be delivered shortly.</strong></p>
+        <p>${nextDigestInfo}</p>
       </div>
       
       <div class="preferences">
@@ -157,10 +196,6 @@ function createConfirmationEmailHtml(user: User) {
           <li><strong>Format:</strong> ${formatText}</li>
         </ul>
       </div>
-      
-      <p>After your welcome digest, future digests will be delivered ${
-        user.preferences.frequency === "daily" ? "daily" : "weekly"
-      }. We hope you'll find the content valuable and relevant to your interests.</p>
       
       <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
       
@@ -271,4 +306,4 @@ export async function sendConfirmationEmail(user: User) {
 }
 
 // Export the token generation function for use in other files
-export { generateUnsubscribeToken, getUnsubscribeUrl }
+export { generateUnsubscribeToken, getUnsubscribeUrl, getNextDigestDate, formatDate }
