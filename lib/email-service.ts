@@ -127,7 +127,7 @@ function createConfirmationEmailHtml(user: User) {
       <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
       
       <div class="footer">
-        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
+        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe (${unsubscribeUrl})</a>.</p>
       </div>
       
     </body>
