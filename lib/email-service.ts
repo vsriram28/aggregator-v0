@@ -17,8 +17,29 @@ function getUnsubscribeUrl(email: string): string {
   return `${fullBaseUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`
 }
 
-// Email template for news digest
-function createDigestEmailHtml(user: User, digest: NewsDigest) {
+// Update the sendDigestEmail function to handle welcome digests
+export async function sendDigestEmail(user: User, digest: NewsDigest, isWelcomeDigest = false) {
+  try {
+    const subject = isWelcomeDigest
+      ? `Welcome to News Digest - Your First Personalized Digest`
+      : `Your ${user.preferences.frequency.charAt(0).toUpperCase() + user.preferences.frequency.slice(1)} News Digest`
+
+    const result = await sendEmail(user.email, subject, createDigestEmailHtml(user, digest, isWelcomeDigest))
+
+    console.log(`${isWelcomeDigest ? "Welcome" : "Regular"} digest email sent:`, result.messageId)
+    return result
+  } catch (error) {
+    console.error(`Failed to send ${isWelcomeDigest ? "welcome" : "regular"} digest email:`, error)
+    // Don't throw in preview mode
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(`Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
+    return { success: false }
+  }
+}
+
+// Update the createDigestEmailHtml function to handle welcome digests
+function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest = false) {
   const unsubscribeUrl = getUnsubscribeUrl(user.email)
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
   // Make sure the baseUrl has a protocol
@@ -30,12 +51,24 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
   console.log("Digest Email - Preferences URL:", preferencesUrl)
   console.log("Digest Email - Unsubscribe URL:", unsubscribeUrl)
 
+  // Add a welcome message for welcome digests
+  const welcomeHeader = isWelcomeDigest
+    ? `
+      <div style="background-color: #f0f7ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+        <h2 style="color: #3498db; margin-top: 0;">Welcome to News Digest!</h2>
+        <p>This is your first personalized digest. Future digests will arrive on your chosen ${
+          user.preferences.frequency
+        } schedule.</p>
+      </div>
+    `
+    : ""
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Your Personalized News Digest</title>
+      <title>${isWelcomeDigest ? "Welcome to News Digest!" : "Your Personalized News Digest"}</title>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
         h1 { color: #2c3e50; }
@@ -53,8 +86,10 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
       </style>
     </head>
     <body>
-      <h1>Your Personalized News Digest</h1>
+      <h1>${isWelcomeDigest ? "Welcome to News Digest!" : "Your Personalized News Digest"}</h1>
       <p>Hello ${user.name},</p>
+      
+      ${welcomeHeader}
       
       <p>${digest.summary}</p>
       
@@ -207,27 +242,6 @@ async function sendEmail(to: string, subject: string, html: string) {
     console.log("Email would be sent to:", to)
     console.log("Subject:", subject)
     return { success: true, messageId: "client-side" }
-  }
-}
-
-// Send digest email to user
-export async function sendDigestEmail(user: User, digest: NewsDigest) {
-  try {
-    const result = await sendEmail(
-      user.email,
-      `Your ${user.preferences.frequency.charAt(0).toUpperCase() + user.preferences.frequency.slice(1)} News Digest`,
-      createDigestEmailHtml(user, digest),
-    )
-
-    console.log("Digest email sent:", result.messageId)
-    return result
-  } catch (error) {
-    console.error("Failed to send digest email:", error)
-    // Don't throw in preview mode
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(`Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`)
-    }
-    return { success: false }
   }
 }
 

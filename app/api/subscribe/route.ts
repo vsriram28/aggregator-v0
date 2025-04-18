@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/db"
 import { sendConfirmationEmail } from "@/lib/email-service"
+import { fetchNewsForTopics } from "@/lib/news-fetcher"
+import { generatePersonalizedDigest } from "@/lib/llm-service"
+import { sendDigestEmail } from "@/lib/email-service"
+import { saveDigest } from "@/lib/db"
 import type { User } from "@/lib/db-schema"
 
 export async function POST(request: NextRequest) {
@@ -25,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     let user: User
+    let isNewUser = false
 
     if (existingUser) {
       // User exists, update their preferences
@@ -55,6 +60,7 @@ export async function POST(request: NextRequest) {
       }
 
       user = newUser as User
+      isNewUser = true
     }
 
     // Send confirmation email
@@ -63,6 +69,19 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error("Error sending confirmation email:", emailError)
       // Continue even if email fails - don't fail the whole request
+    }
+
+    // For new users, generate and send an immediate digest
+    if (isNewUser) {
+      try {
+        // Use a background process to avoid blocking the response
+        sendImmediateDigest(user).catch((error) => {
+          console.error("Error sending immediate digest:", error)
+        })
+      } catch (digestError) {
+        console.error("Error scheduling immediate digest:", digestError)
+        // Continue even if immediate digest fails - don't fail the whole request
+      }
     }
 
     return NextResponse.json({
@@ -75,5 +94,43 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Subscription error:", error)
     return NextResponse.json({ error: "Failed to process subscription" + error }, { status: 500 })
+  }
+}
+
+// Function to send an immediate digest to a new user
+async function sendImmediateDigest(user: User) {
+  console.log(`Generating immediate welcome digest for new user: ${user.email}`)
+
+  try {
+    // Fetch news based on user preferences
+    const articles = await fetchNewsForTopics(user.preferences.topics)
+
+    if (articles.length === 0) {
+      console.log(`No articles found for user ${user.id} with topics: ${user.preferences.topics.join(", ")}`)
+      return
+    }
+
+    // Generate personalized digest with a welcome focus
+    const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
+      articles,
+      user.preferences,
+      true, // isWelcomeDigest flag
+    )
+
+    // Save digest to database
+    const digest = await saveDigest({
+      userId: user.id,
+      createdAt: new Date(),
+      articles: summarizedArticles,
+      summary: introduction,
+    })
+
+    // Send email
+    await sendDigestEmail(user, digest, true) // isWelcomeDigest flag
+
+    console.log(`Successfully sent welcome digest to ${user.email}`)
+  } catch (error) {
+    console.error(`Error sending welcome digest to user ${user.id}:`, error)
+    throw error
   }
 }

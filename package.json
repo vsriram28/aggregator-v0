@@ -60,10 +60,10 @@
     "zod": "^3.24.1",
     "cron": "latest",
     "nodemailer": "latest",
-    "ai": "latest",
-    "@ai-sdk/google": "latest",
     "crypto": "latest",
-    "@supabase/supabase-js": "latest"
+    "@supabase/supabase-js": "latest",
+    "ai": "latest",
+    "@ai-sdk/google": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
