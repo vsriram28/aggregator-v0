@@ -54,6 +54,57 @@ function createDigestEmailHtml(user: User, digest: NewsDigest) {
   `
 }
 
+// Create confirmation email HTML template
+function createConfirmationEmailHtml(user: User) {
+  const topicsString = user.preferences.topics.join(", ")
+  const sourcesString = user.preferences.sources.join(", ")
+  const frequencyText = user.preferences.frequency === "daily" ? "daily" : "weekly"
+  const formatText = user.preferences.format === "short" ? "short summaries" : "detailed analysis"
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Welcome to News Digest!</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; }
+        .preferences { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .preferences h3 { margin-top: 0; color: #3498db; }
+        .preferences ul { margin-bottom: 0; }
+        .button { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px; }
+        .footer { margin-top: 30px; font-size: 0.9em; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 15px; }
+      </style>
+    </head>
+    <body>
+      <h1>Welcome to News Digest!</h1>
+      <p>Hello ${user.name},</p>
+      
+      <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed, and you'll start receiving news digests based on your preferences.</p>
+      
+      <div class="preferences">
+        <h3>Your Preferences</h3>
+        <ul>
+          <li><strong>Topics:</strong> ${topicsString}</li>
+          <li><strong>Sources:</strong> ${sourcesString}</li>
+          <li><strong>Frequency:</strong> ${frequencyText}</li>
+          <li><strong>Format:</strong> ${formatText}</li>
+        </ul>
+      </div>
+      
+      <p>Your first digest will be delivered ${user.preferences.frequency === "daily" ? "tomorrow" : "next week"}. We hope you'll find the content valuable and relevant to your interests.</p>
+      
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/preferences?userId=${user.id}" class="button">Manage Your Preferences</a>
+      
+      <div class="footer">
+        <p>If you didn't sign up for this service, please ignore this email or <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${user.email}">unsubscribe</a>.</p>
+      </div>
+    </body>
+    </html>
+  `
+}
+
 // Send digest email to user
 export async function sendDigestEmail(user: User, digest: NewsDigest) {
   const { data, error } = await resend.emails.send({
@@ -65,6 +116,22 @@ export async function sendDigestEmail(user: User, digest: NewsDigest) {
 
   if (error) {
     throw new Error(`Failed to send email: ${error.message}`)
+  }
+
+  return data
+}
+
+// Send confirmation email to newly registered user
+export async function sendConfirmationEmail(user: User) {
+  const { data, error } = await resend.emails.send({
+    from: "News Digest <welcome@yourdomain.com>",
+    to: [user.email],
+    subject: "Welcome to News Digest - Subscription Confirmed",
+    html: createConfirmationEmailHtml(user),
+  })
+
+  if (error) {
+    throw new Error(`Failed to send confirmation email: ${error.message}`)
   }
 
   return data

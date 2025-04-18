@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createUser } from "@/lib/db"
+import { sendConfirmationEmail } from "@/lib/email-service" // Add this import
 import type { UserPreferences } from "@/lib/db-schema"
 
 export async function POST(request: NextRequest) {
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await createUser(email, name, preferences as UserPreferences)
+
+    // Send confirmation email immediately after successful registration
+    await sendConfirmationEmail(user)
 
     return NextResponse.json({ user })
   } catch (error) {

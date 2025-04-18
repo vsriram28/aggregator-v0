@@ -19,8 +19,8 @@ export default function SuccessPage() {
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Subscription Successful!</h1>
         <p className="text-gray-600 mb-6">
-          Thank you for subscribing to our personalized news digest. You'll start receiving updates according to your
-          preferences.
+          Thank you for subscribing to our personalized news digest. We've sent a confirmation email to your inbox.
+          You'll start receiving regular updates according to your preferences.
         </p>
 
         <div className="space-y-3">
