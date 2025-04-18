@@ -3,7 +3,7 @@ export type User = {
   id: string
   email: string
   name: string
-  createdAt: Date
+  created_at?: Date
   preferences: UserPreferences
 }
 
@@ -20,6 +20,7 @@ export type NewsArticle = {
   url: string
   source: string
   publishedAt: Date
+  published_at?: Date
   content: string
   summary?: string
   topics: string[]
@@ -27,8 +28,10 @@ export type NewsArticle = {
 
 export type NewsDigest = {
   id: string
-  userId: string
-  createdAt: Date
+  userId: string // Keep this for TypeScript compatibility
+  user_id: string // Add this to match the database column name
+  createdAt?: Date // Keep this for TypeScript compatibility
+  created_at: Date // Add this to match the database column name
   articles: NewsArticle[]
   summary: string
 }

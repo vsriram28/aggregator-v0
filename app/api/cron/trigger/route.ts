@@ -17,9 +17,11 @@ export async function GET(request: Request) {
     // Get user by email
     try {
       const user = await getUserByEmail(email)
+      console.log(`Found user: ${user.id} (${user.email})`)
 
       // Fetch news based on user preferences
       const articles = await fetchNewsForTopics(user.preferences.topics)
+      console.log(`Fetched ${articles.length} articles for topics: ${user.preferences.topics.join(", ")}`)
 
       if (articles.length === 0) {
         return NextResponse.json({
@@ -33,17 +35,20 @@ export async function GET(request: Request) {
         articles,
         user.preferences,
       )
+      console.log(`Generated digest with introduction: ${introduction.substring(0, 50)}...`)
 
-      // Save digest to database
+      // Save digest to database - use the correct column names
       const digest = await saveDigest({
-        userId: user.id,
-        createdAt: new Date(),
+        userId: user.id, // This will be mapped to user_id in the saveDigest function
+        createdAt: new Date(), // This will be mapped to created_at in the saveDigest function
         articles: summarizedArticles,
         summary: introduction,
       })
+      console.log(`Saved digest with ID: ${digest.id}`)
 
       // Send email
       await sendDigestEmail(user, digest)
+      console.log(`Sent email to ${user.email}`)
 
       return NextResponse.json({
         success: true,
@@ -71,7 +76,6 @@ export async function GET(request: Request) {
       {
         error: "Failed to trigger digest",
         message: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
         details: JSON.stringify(error),
         timestamp: new Date().toISOString(),
       },

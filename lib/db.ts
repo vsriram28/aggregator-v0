@@ -46,7 +46,6 @@ export async function updateUserPreferences(userId: string, preferences: Partial
 }
 
 // News article management
-// Update the saveArticles function to be more robust with column handling
 export async function saveArticles(articles: Omit<NewsArticle, "id">[]) {
   try {
     // First, check if any articles with the same URLs already exist
@@ -116,25 +115,36 @@ export async function getArticlesByTopics(topics: string[], limit = 20) {
 }
 
 // Digest management
-// Update saveDigest to handle both createdAt and created_at
+// Update saveDigest to use only the user_id column name that exists in the database
 export async function saveDigest(digest: Omit<NewsDigest, "id">) {
   try {
     const now = new Date()
+
+    // Log the digest object for debugging
+    console.log("Saving digest:", {
+      user_id: digest.userId, // We'll convert userId to user_id
+      created_at: now,
+      articles: Array.isArray(digest.articles) ? `${digest.articles.length} articles` : typeof digest.articles,
+      summary: digest.summary ? `${digest.summary.substring(0, 50)}...` : null,
+    })
+
     const { data, error } = await supabase
       .from("digests")
       .insert([
         {
-          userId: digest.userId,
-          user_id: digest.userId, // Ensure both column names are populated
-          createdAt: now,
-          created_at: now, // Ensure both column names are populated
+          user_id: digest.userId, // Use user_id instead of userId
+          created_at: now,
           articles: digest.articles,
           summary: digest.summary,
         },
       ])
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error("Error in saveDigest SQL operation:", error)
+      throw error
+    }
+
     return data?.[0] as NewsDigest
   } catch (error) {
     console.error("Error saving digest:", error)
@@ -147,8 +157,8 @@ export async function getDigestsByUserId(userId: string, limit = 10) {
     const { data, error } = await supabase
       .from("digests")
       .select("*")
-      .eq("user_id", userId) // Use user_id instead of userId to match the column name
-      .order("created_at", { ascending: false }) // Use created_at instead of createdAt
+      .eq("user_id", userId) // Use user_id instead of userId
+      .order("created_at", { ascending: false })
       .limit(limit)
 
     if (error) throw error
