@@ -46,60 +46,101 @@ export async function updateUserPreferences(userId: string, preferences: Partial
 }
 
 // News article management
-// Update the saveArticles function to ensure it uses publishedAt consistently
+// Update the saveArticles function to be more robust with column handling
 export async function saveArticles(articles: Omit<NewsArticle, "id">[]) {
   try {
+    // First, check if any articles with the same URLs already exist
+    const urls = articles.map((article) => article.url)
+    const { data: existingArticles, error: checkError } = await supabase.from("articles").select("url").in("url", urls)
+
+    if (checkError) throw checkError
+
+    // Filter out articles that already exist
+    const existingUrls = new Set(existingArticles?.map((a) => a.url) || [])
+    const newArticles = articles.filter((article) => !existingUrls.has(article.url))
+
+    if (newArticles.length === 0) {
+      console.log("No new articles to save")
+      return articles as NewsArticle[] // Return the original articles
+    }
+
+    // Insert new articles with explicit column mapping
     const { data, error } = await supabase
       .from("articles")
       .insert(
-        articles.map((article) => ({
-          title: article.title,
-          url: article.url,
-          source: article.source,
-          publishedAt: article.publishedAt, // Ensure we're using publishedAt consistently
-          content: article.content,
-          topics: article.topics,
-          summary: article.summary,
-        })),
+        newArticles.map((article) => {
+          const publishDate = article.publishedAt || new Date()
+          return {
+            title: article.title,
+            url: article.url,
+            source: article.source,
+            publishedAt: publishDate,
+            published_at: publishDate,
+            content: article.content,
+            topics: article.topics || [],
+            summary: article.summary || null,
+          }
+        }),
       )
       .select()
 
-    if (error) throw error
-    return data as NewsArticle[]
+    if (error) {
+      console.error("Error inserting articles:", error)
+      throw error
+    }
+
+    // Return all articles (both existing and newly inserted)
+    return articles as NewsArticle[]
   } catch (error) {
     console.error("Error saving articles:", error)
-    throw error
+    // Return empty array instead of throwing to prevent the whole process from failing
+    return [] as NewsArticle[]
   }
 }
 
 export async function getArticlesByTopics(topics: string[], limit = 20) {
-  const { data, error } = await supabase
-    .from("articles")
-    .select("*")
-    .containedBy("topics", topics)
-    .order("publishedAt", { ascending: false })
-    .limit(limit)
+  try {
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .containedBy("topics", topics)
+      .order("publishedAt", { ascending: false })
+      .limit(limit)
 
-  if (error) throw error
-  return data as NewsArticle[]
+    if (error) throw error
+    return data as NewsArticle[]
+  } catch (error) {
+    console.error("Error getting articles by topics:", error)
+    return [] // Return empty array instead of throwing
+  }
 }
 
 // Digest management
 export async function saveDigest(digest: Omit<NewsDigest, "id">) {
-  const { data, error } = await supabase.from("digests").insert([digest]).select()
+  try {
+    const { data, error } = await supabase.from("digests").insert([digest]).select()
 
-  if (error) throw error
-  return data?.[0] as NewsDigest
+    if (error) throw error
+    return data?.[0] as NewsDigest
+  } catch (error) {
+    console.error("Error saving digest:", error)
+    throw error
+  }
 }
 
 export async function getDigestsByUserId(userId: string, limit = 10) {
-  const { data, error } = await supabase
-    .from("digests")
-    .select("*")
-    .eq("userId", userId)
-    .order("createdAt", { ascending: false })
-    .limit(limit)
+  try {
+    const { data, error } = await supabase
+      .from("digests")
+      .select("*")
+      .eq("userId", userId)
+      .order("createdAt", { ascending: false })
+      .limit(limit)
 
-  if (error) throw error
-  return data as NewsDigest[]
+    if (error) throw error
+    return data as NewsDigest[]
+  } catch (error) {
+    console.error("Error getting digests by user ID:", error)
+    return [] // Return empty array instead of throwing
+  }
 }
