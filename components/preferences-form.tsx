@@ -38,7 +38,7 @@ const AVAILABLE_SOURCES = [
   "CNBC",
   "TechCrunch",
   "YCombinator",
-  "PBS.org"
+  "PBS.org",
 ]
 
 export function PreferencesForm({
