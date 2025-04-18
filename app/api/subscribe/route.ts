@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createUser, getUserByEmail, updateUserPreferences } from "@/lib/db"
+import { supabase } from "@/lib/db"
 import { sendConfirmationEmail } from "@/lib/email-service"
-import type { UserPreferences } from "@/lib/db-schema"
+import type { User } from "@/lib/db-schema"
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,34 +12,68 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Check if user already exists
-    try {
-      const existingUser = await getUserByEmail(email)
+    // First, check if the user exists
+    const { data: existingUser, error: findError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle()
 
-      // If we get here, user exists - update their preferences
-      const updatedUser = await updateUserPreferences(existingUser.id, preferences as UserPreferences)
-
-      // Send confirmation email
-      await sendConfirmationEmail(updatedUser)
-
-      return NextResponse.json({
-        user: updatedUser,
-        message: "Your subscription has been updated successfully!",
-      })
-    } catch (error) {
-      // User doesn't exist, continue with creation
-      const newUser = await createUser(email, name, preferences as UserPreferences)
-
-      // Send confirmation email
-      await sendConfirmationEmail(newUser)
-
-      return NextResponse.json({
-        user: newUser,
-        message: "Your subscription has been created successfully!",
-      })
+    if (findError) {
+      console.error("Error checking for existing user:", findError)
+      return NextResponse.json({ error: "Failed to check for existing user" }, { status: 500 })
     }
+
+    let user: User
+
+    if (existingUser) {
+      // User exists, update their preferences
+      const { data: updatedUser, error: updateError } = await supabase
+        .from("users")
+        .update({ preferences })
+        .eq("id", existingUser.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error("Error updating user:", updateError)
+        return NextResponse.json({ error: "Failed to update user preferences" }, { status: 500 })
+      }
+
+      user = updatedUser as User
+    } else {
+      // User doesn't exist, create a new one
+      const { data: newUser, error: createError } = await supabase
+        .from("users")
+        .insert([{ email, name, preferences }])
+        .select()
+        .single()
+
+      if (createError) {
+        console.error("Error creating user:", createError)
+        return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
+      }
+
+      user = newUser as User
+    }
+
+    // Send confirmation email
+    try {
+      await sendConfirmationEmail(user)
+    } catch (emailError) {
+      console.error("Error sending confirmation email:", emailError)
+      // Continue even if email fails - don't fail the whole request
+    }
+
+    return NextResponse.json({
+      user,
+      message: existingUser
+        ? "Your subscription has been updated successfully!"
+        : "Your subscription has been created successfully!",
+      isUpdate: !!existingUser,
+    })
   } catch (error) {
     console.error("Subscription error:", error)
-    return NextResponse.json({ error: "Failed to create subscription" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to process subscription" }, { status: 500 })
   }
 }
