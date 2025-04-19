@@ -68,25 +68,33 @@ export async function POST(request: NextRequest) {
       // Continue even if email fails - don't fail the whole request
     }
 
-    // For new users, trigger the welcome digest immediately
+    // For new users, directly call the welcome digest API
     if (isNewUser) {
       try {
-        console.log(`Triggering welcome digest for new user: ${user.email}`)
+        console.log(`Triggering welcome digest for new user: ${user.email} (${user.id})`)
 
+        // Make a direct server-side call to the welcome digest endpoint
+        // This is more reliable than using fetch in a serverless function
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
         const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
 
-        // Trigger the welcome digest immediately but don't wait for it to complete
-        fetch(`${fullBaseUrl}/api/digest/trigger-welcome?email=${encodeURIComponent(user.email)}`, {
-          method: "GET",
+        // Use the POST endpoint which takes userId directly
+        const welcomeDigestUrl = `${fullBaseUrl}/api/digest/welcome`
+
+        const response = await fetch(welcomeDigestUrl, {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-        }).catch((error) => {
-          console.error(`Error triggering welcome digest for user ${user.email}:`, error)
+          body: JSON.stringify({ userId: user.id }),
         })
 
-        console.log(`Welcome digest triggered for user: ${user.email}`)
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Failed to trigger welcome digest: ${response.status}`, errorText)
+        } else {
+          console.log(`Welcome digest successfully triggered for user: ${user.email}`)
+        }
       } catch (scheduleError) {
         console.error("Error triggering welcome digest:", scheduleError)
         // Continue even if scheduling fails - don't fail the whole request

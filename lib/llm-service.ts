@@ -58,6 +58,8 @@ export async function generatePersonalizedDigest(
   userName = "there", // Add default name parameter
 ) {
   try {
+    console.log(`Generating digest for ${userName}, isWelcomeDigest: ${isWelcomeDigest}`)
+
     // First, summarize each article if not already summarized
     const summarizedArticles = await Promise.all(
       articles.map(async (article) => {
@@ -116,10 +118,14 @@ export async function generatePersonalizedDigest(
     }
 
     try {
+      console.log("Sending prompt to LLM:", prompt.substring(0, 200) + "...")
+
       const { text: introduction } = await generateText({
         model: getGoogleModel(),
         prompt,
       })
+
+      console.log("Received introduction from LLM:", introduction.substring(0, 100) + "...")
 
       return {
         introduction: introduction.trim(),
@@ -131,6 +137,8 @@ export async function generatePersonalizedDigest(
       const fallbackIntro = isWelcomeDigest
         ? `Welcome to your first news digest on ${topicsString}, ${userName}! We've gathered ${summarizedArticles.length} articles that match your interests. Future digests will arrive on your chosen ${preferences.frequency} schedule.`
         : `Here's your ${format} news digest on ${topicsString}, ${userName}. We've gathered ${summarizedArticles.length} articles that match your interests.`
+
+      console.log("Using fallback introduction:", fallbackIntro)
 
       return {
         introduction: fallbackIntro,

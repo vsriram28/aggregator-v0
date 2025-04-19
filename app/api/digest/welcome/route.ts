@@ -17,6 +17,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`Processing welcome digest for user ID: ${userId}`)
 
+    // Add a delay to ensure the user is fully created in the database
+    await new Promise((resolve) => setTimeout(resolve, 10000)) // 10-second delay
+    console.log(`Delay completed, proceeding with welcome digest for user ID: ${userId}`)
+
     // Get the user from the database
     const { data: user, error: userError } = await supabase.from("users").select("*").eq("id", userId).single()
 
@@ -44,36 +48,41 @@ export async function POST(request: NextRequest) {
 
     console.log(`Found ${articles.length} articles for user ${user.email}`)
 
-    // Generate personalized digest with a welcome focus
-    const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
-      articles,
-      user.preferences,
-      true, // isWelcomeDigest flag
-      user.name, // Pass the user's name
-    )
+    try {
+      // Generate personalized digest with a welcome focus
+      const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
+        articles,
+        user.preferences,
+        true, // isWelcomeDigest flag
+        user.name, // Pass the user's name
+      )
 
-    console.log(`Generated welcome digest introduction for user ${user.email}`)
+      console.log(`Generated welcome digest introduction for user ${user.email}`)
 
-    // Save digest to database
-    const digest = await saveDigest({
-      userId: user.id,
-      createdAt: new Date(),
-      articles: summarizedArticles,
-      summary: introduction,
-    })
+      // Save digest to database
+      const digest = await saveDigest({
+        userId: user.id,
+        createdAt: new Date(),
+        articles: summarizedArticles,
+        summary: introduction,
+      })
 
-    console.log(`Saved welcome digest to database for user ${user.email}`)
+      console.log(`Saved welcome digest to database for user ${user.email}`)
 
-    // Send email
-    await sendDigestEmail(user as User, digest, true) // isWelcomeDigest flag
+      // Send email
+      await sendDigestEmail(user as User, digest, true) // isWelcomeDigest flag
 
-    console.log(`Successfully sent welcome digest to ${user.email}`)
+      console.log(`Successfully sent welcome digest to ${user.email}`)
 
-    return NextResponse.json({
-      success: true,
-      message: `Welcome digest sent to ${user.email}`,
-      timestamp: new Date().toISOString(),
-    })
+      return NextResponse.json({
+        success: true,
+        message: `Welcome digest sent to ${user.email}`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error(`Error generating or sending digest for user ${user.email}:`, error)
+      throw error
+    }
   } catch (error) {
     console.error("Error processing welcome digest:", error)
     return NextResponse.json(
