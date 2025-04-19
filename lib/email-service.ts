@@ -49,7 +49,7 @@ function formatDate(date: Date): string {
 }
 
 // Email template for news digest
-function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest = false) {
+function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest = false, isPreferencesUpdated = false) {
   const unsubscribeUrl = getUnsubscribeUrl(user.email)
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
   // Make sure the baseUrl has a protocol
@@ -76,12 +76,32 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
     `
     : ""
 
+  // Add a preferences updated message
+  const preferencesUpdatedHeader = isPreferencesUpdated
+    ? `
+      <div style="background-color: #f0f7ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+        <h2 style="color: #3498db; margin-top: 0;">Your Preferences Have Been Updated!</h2>
+        <p>This is a special digest based on your updated preferences. Your next regular digest will be sent according to your new ${user.preferences.frequency} schedule.</p>
+      </div>
+    `
+    : ""
+
+  // Set the appropriate header based on digest type
+  const specialHeader = isWelcomeDigest ? welcomeHeader : isPreferencesUpdated ? preferencesUpdatedHeader : ""
+
+  // Set the appropriate email title
+  const emailTitle = isWelcomeDigest
+    ? "Welcome to News Digest!"
+    : isPreferencesUpdated
+      ? "Your Updated News Digest"
+      : "Your Personalized News Digest"
+
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>${isWelcomeDigest ? "Welcome to News Digest!" : "Your Personalized News Digest"}</title>
+      <title>${emailTitle}</title>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
         h1 { color: #2c3e50; }
@@ -99,10 +119,10 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       </style>
     </head>
     <body>
-      <h1>${isWelcomeDigest ? "Welcome to News Digest!" : "Your Personalized News Digest"}</h1>
+      <h1>${emailTitle}</h1>
       <p>Hello ${user.name},</p>
       
-      ${welcomeHeader}
+      ${specialHeader}
       
       <p>${digest.summary}</p>
       
@@ -267,18 +287,39 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 // Send digest email to user
-export async function sendDigestEmail(user: User, digest: NewsDigest, isWelcomeDigest = false) {
+export async function sendDigestEmail(
+  user: User,
+  digest: NewsDigest,
+  isWelcomeDigest = false,
+  isPreferencesUpdated = false,
+) {
   try {
-    const subject = isWelcomeDigest
-      ? `Welcome to News Digest - Your First Personalized Digest`
-      : `Your ${user.preferences.frequency.charAt(0).toUpperCase() + user.preferences.frequency.slice(1)} News Digest`
+    let subject = "Your Personalized News Digest"
 
-    const result = await sendEmail(user.email, subject, createDigestEmailHtml(user, digest, isWelcomeDigest))
+    if (isWelcomeDigest) {
+      subject = "Welcome to News Digest - Your First Personalized Digest"
+    } else if (isPreferencesUpdated) {
+      subject = "Your Updated News Digest - Based on Your New Preferences"
+    } else {
+      subject = `Your ${user.preferences.frequency.charAt(0).toUpperCase() + user.preferences.frequency.slice(1)} News Digest`
+    }
 
-    console.log(`${isWelcomeDigest ? "Welcome" : "Regular"} digest email sent:`, result.messageId)
+    const result = await sendEmail(
+      user.email,
+      subject,
+      createDigestEmailHtml(user, digest, isWelcomeDigest, isPreferencesUpdated),
+    )
+
+    console.log(
+      `${isWelcomeDigest ? "Welcome" : isPreferencesUpdated ? "Preferences updated" : "Regular"} digest email sent:`,
+      result.messageId,
+    )
     return result
   } catch (error) {
-    console.error(`Failed to send ${isWelcomeDigest ? "welcome" : "regular"} digest email:`, error)
+    console.error(
+      `Failed to send ${isWelcomeDigest ? "welcome" : isPreferencesUpdated ? "preferences updated" : "regular"} digest email:`,
+      error,
+    )
     // Don't throw in preview mode
     if (process.env.NODE_ENV === "production") {
       throw new Error(`Failed to send email: ${error instanceof Error ? error.message : "Unknown error"}`)

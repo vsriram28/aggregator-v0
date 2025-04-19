@@ -56,9 +56,12 @@ export async function generatePersonalizedDigest(
   preferences: UserPreferences,
   isWelcomeDigest = false,
   userName = "there", // Add default name parameter
+  isPreferencesUpdated = false, // Add flag for preferences updated digest
 ) {
   try {
-    console.log(`Generating digest for ${userName}, isWelcomeDigest: ${isWelcomeDigest}`)
+    console.log(
+      `Generating digest for ${userName}, isWelcomeDigest: ${isWelcomeDigest}, isPreferencesUpdated: ${isPreferencesUpdated}`,
+    )
 
     // First, summarize each article if not already summarized
     const summarizedArticles = await Promise.all(
@@ -103,6 +106,21 @@ export async function generatePersonalizedDigest(
         DO NOT use placeholders like [Subscriber Name] or [Headline]. Use the actual user's name and refer to the actual articles by title or content.
         Keep it under 150 words.
       `
+    } else if (isPreferencesUpdated) {
+      // Special preferences updated digest introduction
+      prompt = `
+        Create a personalized news digest introduction for ${userName} who has just updated their preferences.
+        They are now interested in ${topicsString} with a ${preferences.frequency} ${format} digest.
+        This is a special digest to show them how their updated preferences affect their content.
+        The digest contains these ${summarizedArticles.length} articles in a ${format} format:
+        
+        ${articleDetails}
+        
+        Explain that this is a special digest based on their updated preferences, and that future digests will follow their new preferences.
+        Make it engaging and personal, highlighting how these news items match their updated interests.
+        DO NOT use placeholders like [Subscriber Name] or [Headline]. Use the actual user's name and refer to the actual articles by title or content.
+        Keep it under 150 words.
+      `
     } else {
       // Regular digest introduction
       prompt = `
@@ -134,9 +152,15 @@ export async function generatePersonalizedDigest(
     } catch (error) {
       console.error("Error generating introduction:", error)
       // Provide a fallback introduction
-      const fallbackIntro = isWelcomeDigest
-        ? `Welcome to your first news digest on ${topicsString}, ${userName}! We've gathered ${summarizedArticles.length} articles that match your interests. Future digests will arrive on your chosen ${preferences.frequency} schedule.`
-        : `Here's your ${format} news digest on ${topicsString}, ${userName}. We've gathered ${summarizedArticles.length} articles that match your interests.`
+      let fallbackIntro = ""
+
+      if (isWelcomeDigest) {
+        fallbackIntro = `Welcome to your first news digest on ${topicsString}, ${userName}! We've gathered ${summarizedArticles.length} articles that match your interests. Future digests will arrive on your chosen ${preferences.frequency} schedule.`
+      } else if (isPreferencesUpdated) {
+        fallbackIntro = `Here's your updated news digest based on your new preferences, ${userName}! We've gathered ${summarizedArticles.length} articles that match your updated interests in ${topicsString}. Future digests will follow your new ${preferences.frequency} schedule with ${format} summaries.`
+      } else {
+        fallbackIntro = `Here's your ${format} news digest on ${topicsString}, ${userName}. We've gathered ${summarizedArticles.length} articles that match your interests.`
+      }
 
       console.log("Using fallback introduction:", fallbackIntro)
 

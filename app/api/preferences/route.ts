@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, preferences } = body
+    const { userId, preferences, sendDigest = true } = body
 
     if (!userId || !preferences) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -55,6 +55,35 @@ export async function PUT(request: NextRequest) {
     console.log(`Updating preferences for user ID: ${userId}`)
 
     const user = await updateUserPreferences(userId, preferences as Partial<UserPreferences>)
+
+    // Trigger a preferences updated digest if requested
+    if (sendDigest) {
+      try {
+        console.log(`Triggering preferences updated digest for user: ${user.email}`)
+
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
+        const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
+
+        // Call the preferences-updated digest endpoint
+        const response = await fetch(`${fullBaseUrl}/api/digest/preferences-updated`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: user.id }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`Failed to trigger preferences updated digest: ${response.status}`, errorText)
+        } else {
+          console.log(`Preferences updated digest successfully triggered for user: ${user.email}`)
+        }
+      } catch (error) {
+        console.error(`Error triggering preferences updated digest for user ${user.email}:`, error)
+        // Continue even if digest fails - don't fail the whole request
+      }
+    }
 
     return NextResponse.json({ user })
   } catch (error) {

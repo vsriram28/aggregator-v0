@@ -57,6 +57,7 @@ export function PreferencesForm({
   const [foundUserId, setFoundUserId] = useState(userId || "")
   const [unsubscribe, setUnsubscribe] = useState(false)
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
+  const [sendDigest, setSendDigest] = useState(true)
 
   // Preferences state
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
@@ -218,7 +219,11 @@ export function PreferencesForm({
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: foundUserId, preferences }),
+        body: JSON.stringify({
+          userId: foundUserId,
+          preferences,
+          sendDigest, // Include the sendDigest flag
+        }),
       })
 
       if (!response.ok) {
@@ -226,7 +231,11 @@ export function PreferencesForm({
         throw new Error(data.error || "Failed to update preferences")
       }
 
-      setSuccess("Preferences updated successfully!")
+      setSuccess(
+        sendDigest
+          ? "Preferences updated successfully! A digest based on your new preferences will be sent to your email shortly."
+          : "Preferences updated successfully!",
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
@@ -403,6 +412,22 @@ export function PreferencesForm({
                 <Label htmlFor="detailed">Detailed analysis</Label>
               </div>
             </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="send-digest"
+                checked={sendDigest}
+                onCheckedChange={(checked) => setSendDigest(checked === true)}
+              />
+              <Label htmlFor="send-digest" className="text-sm">
+                Send me a digest based on my new preferences
+              </Label>
+            </div>
+            <p className="text-xs text-gray-500 ml-6">
+              If checked, you'll receive a digest email shortly after updating your preferences
+            </p>
           </div>
         </>
       ) : (
