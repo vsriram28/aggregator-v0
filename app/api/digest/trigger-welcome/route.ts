@@ -14,6 +14,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Email parameter is required" }, { status: 400 })
     }
 
+    console.log(`Welcome digest requested for email: ${email}`)
+
+    // Add a delay to ensure the user is fully created in the database
+    await new Promise((resolve) => setTimeout(resolve, 5000)) // 5-second delay
+
     // Get user by email
     try {
       const user = await getUserByEmail(email)
