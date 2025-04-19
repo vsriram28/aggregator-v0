@@ -40,6 +40,7 @@ export async function GET(request: Request) {
         articles,
         user.preferences,
         true, // isWelcomeDigest flag
+        user.name, // Pass the user's name
       )
       console.log(`Generated welcome digest with introduction: ${introduction.substring(0, 50)}...`)
 

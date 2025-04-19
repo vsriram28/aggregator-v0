@@ -36,6 +36,8 @@ export async function GET() {
         const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
           articles,
           user.preferences,
+          false,
+          user.name, // Pass the user's name
         )
 
         // Save digest to database

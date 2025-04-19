@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       articles,
       user.preferences,
       true, // isWelcomeDigest flag
+      user.name, // Pass the user's name
     )
 
     console.log(`Generated welcome digest introduction for user ${user.email}`)

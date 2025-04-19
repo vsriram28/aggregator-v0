@@ -34,6 +34,8 @@ export async function GET(request: Request) {
       const { introduction, articles: summarizedArticles } = await generatePersonalizedDigest(
         articles,
         user.preferences,
+        false,
+        user.name, // Pass the user's name
       )
       console.log(`Generated digest with introduction: ${introduction.substring(0, 50)}...`)
 
