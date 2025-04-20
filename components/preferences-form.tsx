@@ -85,7 +85,9 @@ export function PreferencesForm({
           return
         }
 
+        // This is the critical API call that was missing
         const response = await fetch(`/api/preferences?${queryParam}`)
+        console.log("API response status:", response.status)
 
         if (!response.ok) {
           // If user not found (404), redirect to home page

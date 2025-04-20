@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     console.log("User preferences:", user.preferences)
 
     // Fetch news based on user's updated preferences
-    const articles = await fetchNewsForTopics(user.preferences.topics, 5)
+    const articles = await fetchNewsForTopics(
+      user.preferences.topics,
+      5, // articles per topic
+      user.preferences.sources, // Pass the user's preferred sources
+    )
 
     console.log(`Fetched ${articles.length} articles for user ${user.email}`)
 
