@@ -15,7 +15,7 @@ const getGoogleApiKey = () => {
 }
 
 // Create a model with explicit API key
-const getGoogleModel = (modelName = "gemini-1.5-flash") => {
+const getGoogleModel = (modelName = "gemini-2.0-flash") => {
   try {
     return google(modelName, { apiKey: getGoogleApiKey() })
   } catch (error) {
