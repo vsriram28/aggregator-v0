@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +13,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import type { UserPreferences } from "@/lib/db-schema"
-import { supabase } from "@/lib/db"
 
 // Available topics and sources
 const AVAILABLE_TOPICS = [
@@ -43,6 +43,11 @@ const AVAILABLE_SOURCES = [
   "PBS.org",
 ]
 
+// Create a Supabase client for client-side use
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 export function PreferencesForm({
   userId,
   email,
@@ -50,9 +55,6 @@ export function PreferencesForm({
   userId?: string
   email?: string
 }) {
-  console.log("==================== PREFERENCES FORM INIT ====================")
-  console.log("Initial props:", { userId, email })
-
   const router = useRouter()
 
   // State for form data and UI
@@ -72,135 +74,45 @@ export function PreferencesForm({
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
   const [format, setFormat] = useState<"short" | "detailed">("short")
 
-  // Log when component mounts
-  useEffect(() => {
-    console.log("==================== PREFERENCES FORM MOUNTED ====================")
-    console.log("Component mounted with:", { userId, email, userEmail, foundUserId })
-
-    // Log environment variables (public ones only)
-    console.log("NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
-    console.log("NEXT_PUBLIC_SUPABASE_ANON_KEY exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-    console.log("NEXT_PUBLIC_APP_URL:", process.env.NEXT_PUBLIC_APP_URL)
-  }, [userId, email, userEmail, foundUserId])
-
   // Fetch user preferences
   useEffect(() => {
     async function fetchUserPreferences() {
-      console.log("==================== FETCH PREFERENCES STARTED ====================")
-      console.log("Fetching preferences for:", { userEmail, foundUserId })
-
       if (!userEmail && !foundUserId) {
-        console.log("No email or userId provided, skipping fetch")
         setLoading(false)
         return
       }
 
       try {
-        // First try direct Supabase query
-        console.log("Attempting direct Supabase query")
+        // Try direct API call to debug endpoint
+        const debugUrl = `/api/debug-simple?email=${encodeURIComponent(userEmail)}`
+        const response = await fetch(debugUrl)
 
-        // Log Supabase client
-        console.log("Supabase client exists:", !!supabase)
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.statusText}`)
+        }
 
-        if (userEmail) {
-          console.log(`Querying for email: ${userEmail}`)
+        const data = await response.json()
+        console.log("Debug API response:", data)
 
-          // Direct query with detailed logging
-          try {
-            const { data, error } = await supabase.from("users").select("*").eq("email", userEmail).single()
-
-            console.log("Supabase query completed")
-            console.log("Query error:", error)
-            console.log("Query data:", data)
-
-            if (error) {
-              console.error("Supabase query error:", error)
-              throw error
-            }
-
-            if (!data) {
-              console.log("No user found with email:", userEmail)
-              throw new Error(`User not found with email: ${userEmail}`)
-            }
-
-            console.log("User found:", data)
-            console.log("User preferences:", data.preferences)
-
-            // Update state with the fetched preferences
-            setFoundUserId(data.id)
-            setSelectedTopics(data.preferences?.topics || [])
-            setSelectedSources(data.preferences?.sources || [])
-            setFrequency(data.preferences?.frequency || "daily")
-            setFormat(data.preferences?.format || "short")
-
-            console.log("State updated with preferences")
-          } catch (directError) {
-            console.error("Direct Supabase query failed:", directError)
-
-            // Fall back to API endpoint
-            console.log("Falling back to API endpoint")
-
-            const response = await fetch(`/api/preferences?email=${encodeURIComponent(userEmail)}`)
-            console.log("API response status:", response.status)
-
-            if (!response.ok) {
-              if (response.status === 404) {
-                console.log("User not found via API, redirecting to home")
-                router.push("/")
-                return
-              }
-              throw new Error(`API request failed: ${response.statusText}`)
-            }
-
-            const data = await response.json()
-            console.log("API response data:", data)
-
-            if (!data.preferences) {
-              throw new Error("No preferences found in API response")
-            }
-
-            setFoundUserId(data.userId)
-            setSelectedTopics(data.preferences.topics || [])
-            setSelectedSources(data.preferences.sources || [])
-            setFrequency(data.preferences.frequency || "daily")
-            setFormat(data.preferences.format || "short")
-
-            console.log("State updated with preferences from API")
-          }
+        if (data.user && data.user.success) {
+          setFoundUserId(data.user.id)
+          setSelectedTopics(data.user.preferencesTopics || [])
+          setSelectedSources(data.user.preferencesSources || [])
+          setFrequency(data.user.preferencesFrequency || "daily")
+          setFormat(data.user.preferencesFormat || "short")
+        } else {
+          throw new Error(data.user?.error || "User not found")
         }
       } catch (err) {
         console.error("Error fetching preferences:", err)
         setError(`Could not load preferences: ${err instanceof Error ? err.message : "Unknown error"}`)
       } finally {
         setLoading(false)
-        console.log("Fetch preferences completed, loading set to false")
-
-        // Log final state
-        console.log("Final state after fetch:", {
-          foundUserId,
-          selectedTopics,
-          selectedSources,
-          frequency,
-          format,
-        })
       }
     }
 
     fetchUserPreferences()
-  }, [userEmail, foundUserId, router])
-
-  // Log state changes
-  useEffect(() => {
-    console.log("==================== STATE UPDATED ====================")
-    console.log("Current state:", {
-      loading,
-      foundUserId,
-      selectedTopics,
-      selectedSources,
-      frequency,
-      format,
-    })
-  }, [loading, foundUserId, selectedTopics, selectedSources, frequency, format])
+  }, [userEmail, foundUserId])
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -288,12 +200,6 @@ export function PreferencesForm({
         format,
       }
 
-      console.log("Updating preferences with:", {
-        userId: foundUserId,
-        preferences,
-        sendDigest,
-      })
-
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -332,62 +238,25 @@ export function PreferencesForm({
     setError("")
 
     try {
-      console.log("Looking up user with email:", userEmail)
+      // Use the debug API endpoint
+      const debugUrl = `/api/debug-simple?email=${encodeURIComponent(userEmail)}`
+      const response = await fetch(debugUrl)
 
-      // Try direct Supabase query first
-      try {
-        const { data, error } = await supabase.from("users").select("*").eq("email", userEmail).single()
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.statusText}`)
+      }
 
-        console.log("Supabase lookup result:", { data, error })
+      const data = await response.json()
+      console.log("Debug API response:", data)
 
-        if (error) {
-          throw error
-        }
-
-        if (!data) {
-          throw new Error("User not found")
-        }
-
-        setFoundUserId(data.id)
-        setSelectedTopics(data.preferences?.topics || [])
-        setSelectedSources(data.preferences?.sources || [])
-        setFrequency(data.preferences?.frequency || "daily")
-        setFormat(data.preferences?.format || "short")
-
-        console.log("Updated state with lookup result")
-      } catch (directError) {
-        console.error("Direct lookup failed:", directError)
-
-        // Fall back to API
-        const queryParam = `email=${encodeURIComponent(userEmail)}`
-        console.log("Falling back to API lookup with query:", queryParam)
-
-        const response = await fetch(`/api/preferences?${queryParam}`)
-        console.log("API lookup response status:", response.status)
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error(`User with email ${userEmail} not found`)
-          }
-
-          const data = await response.json()
-          throw new Error(data.error || "Failed to fetch preferences")
-        }
-
-        const data = await response.json()
-        console.log("API lookup result:", data)
-
-        if (!data.preferences) {
-          throw new Error("No preferences found in response")
-        }
-
-        setFoundUserId(data.userId)
-        setSelectedTopics(data.preferences.topics || [])
-        setSelectedSources(data.preferences.sources || [])
-        setFrequency(data.preferences.frequency || "daily")
-        setFormat(data.preferences.format || "short")
-
-        console.log("Updated state with API lookup result")
+      if (data.user && data.user.success) {
+        setFoundUserId(data.user.id)
+        setSelectedTopics(data.user.preferencesTopics || [])
+        setSelectedSources(data.user.preferencesSources || [])
+        setFrequency(data.user.preferencesFrequency || "daily")
+        setFormat(data.user.preferencesFormat || "short")
+      } else {
+        throw new Error(data.user?.error || "User not found")
       }
     } catch (err) {
       console.error("Error looking up user:", err)
