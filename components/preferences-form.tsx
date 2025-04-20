@@ -45,14 +45,18 @@ const AVAILABLE_SOURCES = [
 export function PreferencesForm({
   userId,
   email,
+  initialPreferences,
 }: {
   userId?: string
   email?: string
+  initialPreferences?: Partial<UserPreferences>
 }) {
+  console.log("PreferencesForm initialized with:", { userId, email, initialPreferences })
+
   const router = useRouter()
 
   // State for form data and UI
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialPreferences)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -63,23 +67,36 @@ export function PreferencesForm({
   const [sendDigest, setSendDigest] = useState(true)
 
   // Preferences state
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
-  const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
-  const [format, setFormat] = useState<"short" | "detailed">("short")
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialPreferences?.topics || [])
+  const [selectedSources, setSelectedSources] = useState<string[]>(initialPreferences?.sources || [])
+  const [frequency, setFrequency] = useState<"daily" | "weekly">(initialPreferences?.frequency || "daily")
+  const [format, setFormat] = useState<"short" | "detailed">(initialPreferences?.format || "short")
 
-  // Fetch user preferences directly from API
+  // Set initial preferences if provided
+  useEffect(() => {
+    if (initialPreferences) {
+      console.log("Setting initial preferences:", initialPreferences)
+      setSelectedTopics(initialPreferences.topics || [])
+      setSelectedSources(initialPreferences.sources || [])
+      setFrequency(initialPreferences.frequency || "daily")
+      setFormat(initialPreferences.format || "short")
+      setLoading(false)
+    }
+  }, [initialPreferences])
+
+  // Fetch user preferences if not provided initially
   useEffect(() => {
     async function fetchUserPreferences() {
-      if (!userEmail && !foundUserId) {
+      if (initialPreferences || !userEmail || foundUserId) {
+        console.log("Skipping fetch: initialPreferences exists or no email provided or userId already found")
         setLoading(false)
         return
       }
 
       try {
-        console.log("Fetching preferences for:", userEmail)
+        console.log("Fetching preferences for email:", userEmail)
 
-        // Use the debug API endpoint that we know works
+        // Use the debug API endpoint
         const response = await fetch(`/api/debug-simple?email=${encodeURIComponent(userEmail)}`)
 
         if (!response.ok) {
@@ -109,7 +126,7 @@ export function PreferencesForm({
     }
 
     fetchUserPreferences()
-  }, [userEmail, foundUserId])
+  }, [userEmail, foundUserId, initialPreferences])
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -251,7 +268,7 @@ export function PreferencesForm({
       }
 
       const data = await response.json()
-      console.log("Lookup response:", data)
+      console.log("API response:", data)
 
       if (data.user && data.user.success) {
         console.log("User found:", data.user)
