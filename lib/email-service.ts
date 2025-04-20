@@ -304,6 +304,11 @@ export async function sendDigestEmail(
       subject = `Your ${user.preferences.frequency.charAt(0).toUpperCase() + user.preferences.frequency.slice(1)} News Digest`
     }
 
+    console.log(
+      `Sending ${isWelcomeDigest ? "welcome" : isPreferencesUpdated ? "preferences updated" : "regular"} digest email to ${user.email}`,
+    )
+    console.log(`Digest contains ${digest.articles.length} articles`)
+
     const result = await sendEmail(
       user.email,
       subject,

@@ -38,9 +38,9 @@ const SOURCE_NAME_MAPPINGS: Record<string, string[]> = {
 }
 
 // Fetch news from News API
-async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], pageSize = 10) {
+async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], pageSize = 5) {
   // We'll fetch more articles than needed to ensure we have enough after filtering by source
-  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize}&apiKey=${NEWS_API_KEY}`
+  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize * 2}&apiKey=${NEWS_API_KEY}`
 
   try {
     const response = await fetch(url)
@@ -110,7 +110,7 @@ export async function fetchNewsForTopics(topics: string[], articlesPerTopic = 5,
       console.log(`Filtering by preferred sources: ${preferredSources.join(", ")}`)
     }
 
-    const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, preferredSources, articlesPerTopic * 2))
+    const articlesPromises = topics.map((topic) => fetchFromNewsAPI(topic, preferredSources, articlesPerTopic))
     const articlesArrays = await Promise.all(articlesPromises)
 
     // Flatten and deduplicate articles by URL

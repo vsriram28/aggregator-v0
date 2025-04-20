@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generating preferences updated digest for user: ${user.email}`)
 
-    // Fetch news based on user's updated preferences, including preferred sources
+    // Fetch news based on user's updated preferences
     const articles = await fetchNewsForTopics(
       user.preferences.topics,
       5, // articles per topic

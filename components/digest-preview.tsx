@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import type { NewsArticle, UserPreferences } from "@/lib/db-schema"
+import type { NewsArticle } from "@/lib/db-schema"
 
 type DigestPreviewProps = {
   email: string
@@ -18,36 +18,12 @@ export function DigestPreview({ email }: DigestPreviewProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [digest, setDigest] = useState<DigestPreviewData | null>(null)
-  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null)
 
-  // First, fetch the user's preferences
   useEffect(() => {
-    async function fetchUserPreferences() {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/preferences?email=${encodeURIComponent(email)}`)
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error(`User with email ${email} not found`)
-          }
-          throw new Error("Failed to fetch user preferences")
-        }
-
-        const data = await response.json()
-        setUserPreferences(data.preferences)
-
-        // Now fetch the preview with the user's preferences
-        await fetchPreview()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unexpected error occurred")
-        setLoading(false)
-      }
-    }
-
     async function fetchPreview() {
       try {
-        const response = await fetch(`/api/digest/preview?email=${encodeURIComponent(email)}`)
+        setLoading(true)
+        const response = await fetch(`/api/digest/preview?email=${email}`)
 
         if (!response.ok) {
           throw new Error("Failed to generate preview")
@@ -55,14 +31,14 @@ export function DigestPreview({ email }: DigestPreviewProps) {
 
         const data = await response.json()
         setDigest(data.digest)
-        setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unexpected error occurred")
+      } finally {
         setLoading(false)
       }
     }
 
-    fetchUserPreferences()
+    fetchPreview()
   }, [email])
 
   if (loading) {
@@ -96,30 +72,6 @@ export function DigestPreview({ email }: DigestPreviewProps) {
 
   return (
     <div className="space-y-6">
-      {userPreferences && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h3 className="font-medium text-gray-700 mb-2">Your Current Preferences</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium">Topics:</p>
-              <p>{userPreferences.topics.join(", ")}</p>
-            </div>
-            <div>
-              <p className="font-medium">Sources:</p>
-              <p>{userPreferences.sources.join(", ")}</p>
-            </div>
-            <div>
-              <p className="font-medium">Frequency:</p>
-              <p>{userPreferences.frequency}</p>
-            </div>
-            <div>
-              <p className="font-medium">Format:</p>
-              <p>{userPreferences.format}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="prose max-w-none">
         <p className="text-lg">{digest.introduction}</p>
       </div>
