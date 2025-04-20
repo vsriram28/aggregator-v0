@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getUserByEmail, updateUserPreferences } from "@/lib/db"
+import { supabase } from "@/lib/db"
 import type { UserPreferences } from "@/lib/db-schema"
 
 export async function GET(request: NextRequest) {
@@ -7,12 +8,29 @@ export async function GET(request: NextRequest) {
     const email = request.nextUrl.searchParams.get("email")
 
     if (!email) {
+      console.log("API: No email provided")
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
     console.log(`API: Fetching preferences for email: ${email}`)
 
     try {
+      // Direct Supabase query for debugging
+      console.log(`API: Querying Supabase directly for email: ${email}`)
+      const { data: directData, error: directError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single()
+
+      if (directError) {
+        console.error(`API: Direct Supabase query error for ${email}:`, directError)
+      } else if (directData) {
+        console.log(`API: Direct Supabase query found user: ${directData.id}`)
+        console.log(`API: User preferences from direct query:`, directData.preferences)
+      }
+
+      // Use the getUserByEmail function
       const user = await getUserByEmail(email)
 
       console.log(`API: Found user: ${user.id} with email: ${user.email}`)

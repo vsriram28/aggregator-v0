@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useRouter } from "next/navigation"
+
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
 import type { UserPreferences } from "@/lib/db-schema"
 
-// Available topics and sources (same as subscription form)
+// Available topics and sources
 const AVAILABLE_TOPICS = [
   "Technology",
   "Business",
@@ -44,14 +45,14 @@ const AVAILABLE_SOURCES = [
 export function PreferencesForm({
   userId,
   email,
-  initialPreferences,
 }: {
   userId?: string
   email?: string
-  initialPreferences?: UserPreferences | null
 }) {
   const router = useRouter()
-  const [loading, setLoading] = useState(!initialPreferences && !(userId && email))
+
+  // State for form data and UI
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -61,21 +62,18 @@ export function PreferencesForm({
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
   const [sendDigest, setSendDigest] = useState(true)
 
-  // Preferences state - initialize with initialPreferences if available
-  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialPreferences?.topics || [])
-  const [selectedSources, setSelectedSources] = useState<string[]>(initialPreferences?.sources || [])
-  const [frequency, setFrequency] = useState<"daily" | "weekly">(initialPreferences?.frequency || "daily")
-  const [format, setFormat] = useState<"short" | "detailed">(initialPreferences?.format || "short")
+  // Preferences state
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
+  const [selectedSources, setSelectedSources] = useState<string[]>([])
+  const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
+  const [format, setFormat] = useState<"short" | "detailed">("short")
 
-  // Fetch user preferences if not provided initially
+  // Debug log for initial props
+  console.log("PreferencesForm initialized with:", { userId, email })
+
+  // Fetch user preferences on component mount
   useEffect(() => {
-    async function fetchPreferences() {
-      if (initialPreferences) {
-        console.log("Using initial preferences:", initialPreferences)
-        setLoading(false)
-        return
-      }
-
+    async function fetchUserPreferences() {
       if (!userEmail && !foundUserId) {
         setLoading(false)
         return
@@ -84,29 +82,29 @@ export function PreferencesForm({
       try {
         console.log("Fetching preferences for:", userEmail || foundUserId)
 
-        // Make sure we're using the email parameter correctly
+        // Construct the query parameter
         const queryParam = userEmail ? `email=${encodeURIComponent(userEmail)}` : ""
 
         if (!queryParam) {
-          setError("Email is required to fetch preferences")
+          console.error("No email provided for preferences lookup")
           setLoading(false)
           return
         }
 
+        // Make the API request
         const response = await fetch(`/api/preferences?${queryParam}`)
         console.log("API response status:", response.status)
 
         if (!response.ok) {
-          // If user not found (404), redirect to home page
           if (response.status === 404) {
             console.log("User not found, redirecting to home")
             router.push("/")
             return
           }
-
           throw new Error(`Failed to fetch preferences: ${response.statusText}`)
         }
 
+        // Parse the response
         const data = await response.json()
         console.log("Received preferences data:", data)
 
@@ -114,6 +112,8 @@ export function PreferencesForm({
           throw new Error("No preferences found in response")
         }
 
+        // Update state with the fetched preferences
+        console.log("Setting preferences:", data.preferences)
         setSelectedTopics(data.preferences.topics || [])
         setSelectedSources(data.preferences.sources || [])
         setFrequency(data.preferences.frequency || "daily")
@@ -122,19 +122,16 @@ export function PreferencesForm({
         if (data.userId) {
           setFoundUserId(data.userId)
         }
-
-        setLoading(false)
       } catch (err) {
         console.error("Error fetching preferences:", err)
-        setError(
-          `Could not load preferences. Please check your email address. ${err instanceof Error ? err.message : ""}`,
-        )
+        setError(`Could not load preferences: ${err instanceof Error ? err.message : "Unknown error"}`)
+      } finally {
         setLoading(false)
       }
     }
 
-    fetchPreferences()
-  }, [userEmail, foundUserId, router, initialPreferences])
+    fetchUserPreferences()
+  }, [userEmail, foundUserId, router])
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -301,6 +298,7 @@ export function PreferencesForm({
     }
   }
 
+  // Render unsubscribe confirmation
   if (unsubscribeConfirm) {
     return (
       <div className="space-y-4">
@@ -325,7 +323,8 @@ export function PreferencesForm({
     )
   }
 
-  if (!foundUserId && !loading && !initialPreferences) {
+  // Render email lookup form if no user ID is found
+  if (!foundUserId && !loading) {
     return (
       <div className="space-y-4">
         <p className="text-gray-600">Enter your email address to manage your preferences:</p>
@@ -355,10 +354,12 @@ export function PreferencesForm({
     )
   }
 
+  // Render loading state
   if (loading) {
     return <div>Loading preferences...</div>
   }
 
+  // Render the main preferences form
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {!unsubscribe ? (
