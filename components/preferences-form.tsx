@@ -44,12 +44,14 @@ const AVAILABLE_SOURCES = [
 export function PreferencesForm({
   userId,
   email,
+  initialPreferences,
 }: {
   userId?: string
   email?: string
+  initialPreferences?: UserPreferences | null
 }) {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialPreferences && !(userId && email))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -59,15 +61,21 @@ export function PreferencesForm({
   const [unsubscribeConfirm, setUnsubscribeConfirm] = useState(false)
   const [sendDigest, setSendDigest] = useState(true)
 
-  // Preferences state
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
-  const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
-  const [format, setFormat] = useState<"short" | "detailed">("short")
+  // Preferences state - initialize with initialPreferences if available
+  const [selectedTopics, setSelectedTopics] = useState<string[]>(initialPreferences?.topics || [])
+  const [selectedSources, setSelectedSources] = useState<string[]>(initialPreferences?.sources || [])
+  const [frequency, setFrequency] = useState<"daily" | "weekly">(initialPreferences?.frequency || "daily")
+  const [format, setFormat] = useState<"short" | "detailed">(initialPreferences?.format || "short")
 
-  // Fetch user preferences
+  // Fetch user preferences if not provided initially
   useEffect(() => {
     async function fetchPreferences() {
+      if (initialPreferences) {
+        console.log("Using initial preferences:", initialPreferences)
+        setLoading(false)
+        return
+      }
+
       if (!userEmail && !foundUserId) {
         setLoading(false)
         return
@@ -86,6 +94,7 @@ export function PreferencesForm({
         }
 
         const response = await fetch(`/api/preferences?${queryParam}`)
+        console.log("API response status:", response.status)
 
         if (!response.ok) {
           // If user not found (404), redirect to home page
@@ -99,6 +108,7 @@ export function PreferencesForm({
         }
 
         const data = await response.json()
+        console.log("Received preferences data:", data)
 
         if (!data.preferences) {
           throw new Error("No preferences found in response")
@@ -123,12 +133,8 @@ export function PreferencesForm({
       }
     }
 
-    if (userEmail || foundUserId) {
-      fetchPreferences()
-    } else {
-      setLoading(false)
-    }
-  }, [userEmail, foundUserId, router])
+    fetchPreferences()
+  }, [userEmail, foundUserId, router, initialPreferences])
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -216,6 +222,12 @@ export function PreferencesForm({
         format,
       }
 
+      console.log("Updating preferences with:", {
+        userId: foundUserId,
+        preferences,
+        sendDigest,
+      })
+
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -270,6 +282,7 @@ export function PreferencesForm({
       }
 
       const data = await response.json()
+      console.log("Lookup result:", data)
 
       if (!data.preferences) {
         throw new Error("No preferences found in response")
@@ -312,7 +325,7 @@ export function PreferencesForm({
     )
   }
 
-  if (!foundUserId && !loading) {
+  if (!foundUserId && !loading && !initialPreferences) {
     return (
       <div className="space-y-4">
         <p className="text-gray-600">Enter your email address to manage your preferences:</p>

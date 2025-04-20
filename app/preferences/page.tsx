@@ -10,11 +10,21 @@ export default async function PreferencesPage({
 }) {
   const { userId, email } = searchParams
 
-  // Check if the user exists in the database
+  console.log("Preferences page loaded with params:", { userId, email })
+
+  // If email is provided, fetch the user to verify they exist and get their preferences
+  let userPreferences = null
+  let foundUserId = userId
+
   if (email) {
     try {
-      await getUserByEmail(email)
+      console.log(`Attempting to fetch user with email: ${email}`)
+      const user = await getUserByEmail(email)
+      console.log(`Found user: ${user.id} with preferences:`, user.preferences)
+      userPreferences = user.preferences
+      foundUserId = user.id
     } catch (error) {
+      console.error(`Error fetching user with email ${email}:`, error)
       // User doesn't exist, redirect to home page
       console.log(`User with email ${email} not found, redirecting to home`)
       redirect("/")
@@ -32,7 +42,7 @@ export default async function PreferencesPage({
           <h1 className="text-2xl font-bold mb-6">Manage Your Preferences</h1>
 
           <Suspense fallback={<div>Loading preferences...</div>}>
-            <PreferencesForm userId={userId} email={email} />
+            <PreferencesForm userId={foundUserId} email={email} initialPreferences={userPreferences} />
           </Suspense>
         </div>
       </div>

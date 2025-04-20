@@ -10,12 +10,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 })
     }
 
-    console.log(`Fetching preferences for email: ${email}`)
+    console.log(`API: Fetching preferences for email: ${email}`)
 
     try {
       const user = await getUserByEmail(email)
 
-      console.log(`Found user: ${user.id} with email: ${user.email}`)
+      console.log(`API: Found user: ${user.id} with email: ${user.email}`)
+      console.log("API: User preferences:", user.preferences)
 
       return NextResponse.json({
         preferences: user.preferences,
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
       })
     } catch (userError) {
-      console.error(`Error fetching user by email: ${email}`, userError)
+      console.error(`API: Error fetching user by email: ${email}`, userError)
 
       if (userError instanceof Error && userError.message.includes("User not found")) {
         return NextResponse.json({ error: `User with email ${email} not found` }, { status: 404 })
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       throw userError
     }
   } catch (error) {
-    console.error("Get preferences error:", error)
+    console.error("API: Get preferences error:", error)
     return NextResponse.json(
       {
         error: "Failed to get preferences",
@@ -52,14 +53,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    console.log(`Updating preferences for user ID: ${userId}`)
+    console.log(`API: Updating preferences for user ID: ${userId}`)
+    console.log("API: New preferences:", preferences)
 
     const user = await updateUserPreferences(userId, preferences as Partial<UserPreferences>)
 
     // Trigger a preferences updated digest if requested
     if (sendDigest) {
       try {
-        console.log(`Triggering preferences updated digest for user: ${user.email}`)
+        console.log(`API: Triggering preferences updated digest for user: ${user.email}`)
 
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
         const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
@@ -75,19 +77,19 @@ export async function PUT(request: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text()
-          console.error(`Failed to trigger preferences updated digest: ${response.status}`, errorText)
+          console.error(`API: Failed to trigger preferences updated digest: ${response.status}`, errorText)
         } else {
-          console.log(`Preferences updated digest successfully triggered for user: ${user.email}`)
+          console.log(`API: Preferences updated digest successfully triggered for user: ${user.email}`)
         }
       } catch (error) {
-        console.error(`Error triggering preferences updated digest for user ${user.email}:`, error)
+        console.error(`API: Error triggering preferences updated digest for user ${user.email}:`, error)
         // Continue even if digest fails - don't fail the whole request
       }
     }
 
     return NextResponse.json({ user })
   } catch (error) {
-    console.error("Update preferences error:", error)
+    console.error("API: Update preferences error:", error)
     return NextResponse.json(
       {
         error: "Failed to update preferences",
