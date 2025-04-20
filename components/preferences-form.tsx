@@ -85,9 +85,7 @@ export function PreferencesForm({
           return
         }
 
-        // This is the critical API call that was missing
         const response = await fetch(`/api/preferences?${queryParam}`)
-        console.log("API response status:", response.status)
 
         if (!response.ok) {
           // If user not found (404), redirect to home page
@@ -101,13 +99,11 @@ export function PreferencesForm({
         }
 
         const data = await response.json()
-        console.log("Received preferences data:", data)
 
         if (!data.preferences) {
           throw new Error("No preferences found in response")
         }
 
-        // Set the preferences in the form
         setSelectedTopics(data.preferences.topics || [])
         setSelectedSources(data.preferences.sources || [])
         setFrequency(data.preferences.frequency || "daily")
@@ -220,12 +216,6 @@ export function PreferencesForm({
         format,
       }
 
-      console.log("Updating preferences with:", {
-        userId: foundUserId,
-        preferences,
-        sendDigest,
-      })
-
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -280,7 +270,6 @@ export function PreferencesForm({
       }
 
       const data = await response.json()
-      console.log("Lookup result:", data)
 
       if (!data.preferences) {
         throw new Error("No preferences found in response")

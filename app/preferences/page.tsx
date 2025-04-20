@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { PreferencesForm } from "@/components/preferences-form"
+import { getUserByEmail } from "@/lib/db"
 
 export default async function PreferencesPage({
   searchParams,
@@ -9,11 +10,16 @@ export default async function PreferencesPage({
 }) {
   const { userId, email } = searchParams
 
-  console.log("Preferences page loaded with params:", { userId, email })
-
-  // No server-side validation here - we'll let the client component handle it
-  // This is what worked in version 45
-  if (!userId && !email) {
+  // Check if the user exists in the database
+  if (email) {
+    try {
+      await getUserByEmail(email)
+    } catch (error) {
+      // User doesn't exist, redirect to home page
+      console.log(`User with email ${email} not found, redirecting to home`)
+      redirect("/")
+    }
+  } else if (!userId) {
     // No email or userId provided, redirect to home
     console.log("No email or userId provided, redirecting to home")
     redirect("/")
