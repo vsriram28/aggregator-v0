@@ -46,10 +46,12 @@ export function PreferencesForm({
   userId,
   email,
   initialPreferences,
+  onSuccess,
 }: {
   userId?: string
   email?: string
   initialPreferences?: Partial<UserPreferences>
+  onSuccess?: () => void
 }) {
   console.log("PreferencesForm initialized with:", { userId, email, initialPreferences })
 
@@ -240,6 +242,11 @@ export function PreferencesForm({
           ? "Preferences updated successfully! A digest based on your new preferences will be sent to your email shortly."
           : "Preferences updated successfully!",
       )
+
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
