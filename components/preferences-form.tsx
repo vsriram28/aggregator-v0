@@ -99,11 +99,13 @@ export function PreferencesForm({
         }
 
         const data = await response.json()
+        console.log("Received preferences data:", data)
 
         if (!data.preferences) {
           throw new Error("No preferences found in response")
         }
 
+        // Set the preferences in the form
         setSelectedTopics(data.preferences.topics || [])
         setSelectedSources(data.preferences.sources || [])
         setFrequency(data.preferences.frequency || "daily")
@@ -216,13 +218,19 @@ export function PreferencesForm({
         format,
       }
 
+      console.log("Updating preferences with:", {
+        userId: foundUserId,
+        preferences,
+        sendDigest,
+      })
+
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: foundUserId,
           preferences,
-          sendDigest, // Include the sendDigest flag
+          sendDigest,
         }),
       })
 
@@ -270,6 +278,7 @@ export function PreferencesForm({
       }
 
       const data = await response.json()
+      console.log("Lookup result:", data)
 
       if (!data.preferences) {
         throw new Error("No preferences found in response")

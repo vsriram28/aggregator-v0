@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       const user = await getUserByEmail(email)
 
       console.log(`Found user: ${user.id} with email: ${user.email}`)
+      console.log("User preferences:", user.preferences)
 
       return NextResponse.json({
         preferences: user.preferences,
@@ -53,6 +54,8 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log(`Updating preferences for user ID: ${userId}`)
+    console.log("New preferences:", preferences)
+    console.log("Send digest:", sendDigest)
 
     const user = await updateUserPreferences(userId, preferences as Partial<UserPreferences>)
 
@@ -61,11 +64,15 @@ export async function PUT(request: NextRequest) {
       try {
         console.log(`Triggering preferences updated digest for user: ${user.email}`)
 
+        // Get the base URL with protocol
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || ""
         const fullBaseUrl = baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
 
-        // Call the preferences-updated digest endpoint
-        const response = await fetch(`${fullBaseUrl}/api/digest/preferences-updated`, {
+        // Direct server-side call to the digest endpoint
+        const digestUrl = `${fullBaseUrl}/api/digest/preferences-updated`
+        console.log("Calling digest endpoint:", digestUrl)
+
+        const response = await fetch(digestUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -77,7 +84,8 @@ export async function PUT(request: NextRequest) {
           const errorText = await response.text()
           console.error(`Failed to trigger preferences updated digest: ${response.status}`, errorText)
         } else {
-          console.log(`Preferences updated digest successfully triggered for user: ${user.email}`)
+          const result = await response.json()
+          console.log(`Preferences updated digest successfully triggered:`, result)
         }
       } catch (error) {
         console.error(`Error triggering preferences updated digest for user ${user.email}:`, error)

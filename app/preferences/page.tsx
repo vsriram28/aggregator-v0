@@ -10,10 +10,14 @@ export default async function PreferencesPage({
 }) {
   const { userId, email } = searchParams
 
+  console.log("Preferences page loaded with params:", { userId, email })
+
   // Check if the user exists in the database
   if (email) {
     try {
-      await getUserByEmail(email)
+      console.log(`Checking if user with email ${email} exists`)
+      const user = await getUserByEmail(email)
+      console.log(`User found: ${user.id}`)
     } catch (error) {
       // User doesn't exist, redirect to home page
       console.log(`User with email ${email} not found, redirecting to home`)

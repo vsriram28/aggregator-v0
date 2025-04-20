@@ -30,13 +30,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Generating preferences updated digest for user: ${user.email}`)
+    console.log("User preferences:", user.preferences)
 
     // Fetch news based on user's updated preferences
-    const articles = await fetchNewsForTopics(
-      user.preferences.topics,
-      5, // articles per topic
-      user.preferences.sources, // Pass the user's preferred sources
-    )
+    const articles = await fetchNewsForTopics(user.preferences.topics, 5)
+
+    console.log(`Fetched ${articles.length} articles for user ${user.email}`)
 
     if (articles.length === 0) {
       console.log(`No articles found for user ${userId} with topics: ${user.preferences.topics.join(", ")}`)
@@ -46,7 +45,11 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    console.log(`Found ${articles.length} articles for user ${user.email}`)
+    // Log the first few articles for debugging
+    console.log(
+      "Sample articles:",
+      articles.slice(0, 2).map((a) => ({ title: a.title, source: a.source })),
+    )
 
     try {
       // Generate personalized digest with a preferences updated focus
@@ -59,6 +62,7 @@ export async function POST(request: NextRequest) {
       )
 
       console.log(`Generated preferences updated digest introduction for user ${user.email}`)
+      console.log("Introduction:", introduction.substring(0, 100) + "...")
 
       // Save digest to database
       const digest = await saveDigest({
@@ -71,8 +75,9 @@ export async function POST(request: NextRequest) {
       console.log(`Saved preferences updated digest to database for user ${user.email}`)
 
       // Send email with preferences updated flag
-      await sendDigestEmail(user as User, digest, false, true) // isPreferencesUpdated flag
+      const emailResult = await sendDigestEmail(user as User, digest, false, true) // isPreferencesUpdated flag
 
+      console.log(`Email sending result:`, emailResult)
       console.log(`Successfully sent preferences updated digest to ${user.email}`)
 
       return NextResponse.json({

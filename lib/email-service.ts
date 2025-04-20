@@ -230,6 +230,8 @@ function createConfirmationEmailHtml(user: User) {
 
 // Simple email sender that works in both server and client environments
 async function sendEmail(to: string, subject: string, html: string) {
+  console.log(`Attempting to send email to ${to} with subject: ${subject}`)
+
   // In preview/development mode, just log the email
   if (process.env.NODE_ENV !== "production") {
     console.log("Email would be sent to:", to)
@@ -266,6 +268,9 @@ async function sendEmail(to: string, subject: string, html: string) {
         const error = await response.text()
         throw new Error(`Failed to send email: ${error}`)
       }
+
+      const result = await response.json()
+      console.log("Email API response:", result)
 
       return { success: true, messageId: Date.now().toString() }
     } catch (error) {
