@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,11 @@ const AVAILABLE_SOURCES = [
   "PBS.org",
 ]
 
+// Create a Supabase client for client-side use
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 export function PreferencesForm({
   userId,
   email,
@@ -68,10 +74,7 @@ export function PreferencesForm({
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
   const [format, setFormat] = useState<"short" | "detailed">("short")
 
-  // Debug log for initial props
-  console.log("PreferencesForm initialized with:", { userId, email })
-
-  // Fetch user preferences on component mount
+  // Fetch user preferences directly from Supabase
   useEffect(() => {
     async function fetchUserPreferences() {
       if (!userEmail && !foundUserId) {
@@ -82,46 +85,31 @@ export function PreferencesForm({
       try {
         console.log("Fetching preferences for:", userEmail || foundUserId)
 
-        // Construct the query parameter
-        const queryParam = userEmail ? `email=${encodeURIComponent(userEmail)}` : ""
+        // Query Supabase directly
+        const { data, error } = await supabase.from("users").select("*").eq("email", userEmail).single()
 
-        if (!queryParam) {
-          console.error("No email provided for preferences lookup")
-          setLoading(false)
-          return
-        }
-
-        // Make the API request
-        const response = await fetch(`/api/preferences?${queryParam}`)
-        console.log("API response status:", response.status)
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            console.log("User not found, redirecting to home")
+        if (error) {
+          console.error("Error fetching user:", error)
+          if (error.code === "PGRST116") {
+            // User not found
             router.push("/")
             return
           }
-          throw new Error(`Failed to fetch preferences: ${response.statusText}`)
+          throw error
         }
 
-        // Parse the response
-        const data = await response.json()
-        console.log("Received preferences data:", data)
-
-        if (!data.preferences) {
-          throw new Error("No preferences found in response")
+        if (!data) {
+          throw new Error("User not found")
         }
+
+        console.log("Found user:", data)
 
         // Update state with the fetched preferences
-        console.log("Setting preferences:", data.preferences)
-        setSelectedTopics(data.preferences.topics || [])
-        setSelectedSources(data.preferences.sources || [])
-        setFrequency(data.preferences.frequency || "daily")
-        setFormat(data.preferences.format || "short")
-
-        if (data.userId) {
-          setFoundUserId(data.userId)
-        }
+        setFoundUserId(data.id)
+        setSelectedTopics(data.preferences?.topics || [])
+        setSelectedSources(data.preferences?.sources || [])
+        setFrequency(data.preferences?.frequency || "daily")
+        setFormat(data.preferences?.format || "short")
       } catch (err) {
         console.error("Error fetching preferences:", err)
         setError(`Could not load preferences: ${err instanceof Error ? err.message : "Unknown error"}`)
@@ -263,33 +251,28 @@ export function PreferencesForm({
     setError("")
 
     try {
-      const queryParam = `email=${encodeURIComponent(userEmail)}`
-      console.log("Looking up user with query:", queryParam)
+      // Query Supabase directly
+      const { data, error } = await supabase.from("users").select("*").eq("email", userEmail).single()
 
-      const response = await fetch(`/api/preferences?${queryParam}`)
-
-      if (!response.ok) {
-        // If user not found (404), show appropriate error
-        if (response.status === 404) {
+      if (error) {
+        console.error("Error looking up user:", error)
+        if (error.code === "PGRST116") {
           throw new Error(`User with email ${userEmail} not found`)
         }
-
-        const data = await response.json()
-        throw new Error(data.error || "Failed to fetch preferences")
+        throw error
       }
 
-      const data = await response.json()
+      if (!data) {
+        throw new Error("User not found")
+      }
+
       console.log("Lookup result:", data)
 
-      if (!data.preferences) {
-        throw new Error("No preferences found in response")
-      }
-
-      setFoundUserId(data.userId)
-      setSelectedTopics(data.preferences.topics || [])
-      setSelectedSources(data.preferences.sources || [])
-      setFrequency(data.preferences.frequency || "daily")
-      setFormat(data.preferences.format || "short")
+      setFoundUserId(data.id)
+      setSelectedTopics(data.preferences?.topics || [])
+      setSelectedSources(data.preferences?.sources || [])
+      setFrequency(data.preferences?.frequency || "daily")
+      setFormat(data.preferences?.format || "short")
     } catch (err) {
       console.error("Error looking up user:", err)
       setError(`User not found. Please check your email address. ${err instanceof Error ? err.message : ""}`)
