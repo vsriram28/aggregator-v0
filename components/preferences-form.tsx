@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -43,11 +42,6 @@ const AVAILABLE_SOURCES = [
   "PBS.org",
 ]
 
-// Create a Supabase client for client-side use
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
 export function PreferencesForm({
   userId,
   email,
@@ -74,7 +68,7 @@ export function PreferencesForm({
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
   const [format, setFormat] = useState<"short" | "detailed">("short")
 
-  // Fetch user preferences
+  // Fetch user preferences directly from API
   useEffect(() => {
     async function fetchUserPreferences() {
       if (!userEmail && !foundUserId) {
@@ -83,24 +77,27 @@ export function PreferencesForm({
       }
 
       try {
-        // Try direct API call to debug endpoint
-        const debugUrl = `/api/debug-simple?email=${encodeURIComponent(userEmail)}`
-        const response = await fetch(debugUrl)
+        console.log("Fetching preferences for:", userEmail)
+
+        // Use the debug API endpoint that we know works
+        const response = await fetch(`/api/debug-simple?email=${encodeURIComponent(userEmail)}`)
 
         if (!response.ok) {
-          throw new Error(`API request failed: ${response.statusText}`)
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`)
         }
 
         const data = await response.json()
-        console.log("Debug API response:", data)
+        console.log("API response:", data)
 
         if (data.user && data.user.success) {
+          console.log("User found:", data.user)
           setFoundUserId(data.user.id)
           setSelectedTopics(data.user.preferencesTopics || [])
           setSelectedSources(data.user.preferencesSources || [])
           setFrequency(data.user.preferencesFrequency || "daily")
           setFormat(data.user.preferencesFormat || "short")
         } else {
+          console.error("User not found or error:", data.user?.error)
           throw new Error(data.user?.error || "User not found")
         }
       } catch (err) {
@@ -200,6 +197,12 @@ export function PreferencesForm({
         format,
       }
 
+      console.log("Updating preferences with:", {
+        userId: foundUserId,
+        preferences,
+        sendDigest,
+      })
+
       const response = await fetch("/api/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -238,24 +241,27 @@ export function PreferencesForm({
     setError("")
 
     try {
+      console.log("Looking up user with email:", userEmail)
+
       // Use the debug API endpoint
-      const debugUrl = `/api/debug-simple?email=${encodeURIComponent(userEmail)}`
-      const response = await fetch(debugUrl)
+      const response = await fetch(`/api/debug-simple?email=${encodeURIComponent(userEmail)}`)
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`)
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log("Debug API response:", data)
+      console.log("Lookup response:", data)
 
       if (data.user && data.user.success) {
+        console.log("User found:", data.user)
         setFoundUserId(data.user.id)
         setSelectedTopics(data.user.preferencesTopics || [])
         setSelectedSources(data.user.preferencesSources || [])
         setFrequency(data.user.preferencesFrequency || "daily")
         setFormat(data.user.preferencesFormat || "short")
       } else {
+        console.error("User not found or error:", data.user?.error)
         throw new Error(data.user?.error || "User not found")
       }
     } catch (err) {
