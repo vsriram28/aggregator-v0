@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button"
 export default function SuccessPage({
   searchParams,
 }: {
-  searchParams: { message?: string; isUpdate?: string }
+  searchParams: { message?: string; isUpdate?: string; email?: string }
 }) {
   const message = searchParams.message || "Subscription successful!"
   const isUpdate = searchParams.isUpdate === "true"
+  const email = searchParams.email || ""
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -34,7 +35,7 @@ export default function SuccessPage({
         </p>
 
         <div className="space-y-3">
-          <Link href="/preferences" passHref>
+          <Link href={email ? `/preferences?email=${encodeURIComponent(email)}` : "/preferences"} passHref>
             <Button variant="outline" className="w-full">
               Manage Preferences
             </Button>

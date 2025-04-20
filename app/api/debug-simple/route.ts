@@ -61,15 +61,21 @@ async function testConnection() {
 
 async function lookupUser(email: string) {
   try {
+    console.log(`Debug API: Looking up user with email: ${email}`)
     const { data, error } = await supabase.from("users").select("*").eq("email", email).single()
 
     if (error) {
+      console.log(`Debug API: Error looking up user: ${error.message}`)
       return { success: false, error: error.message }
     }
 
     if (!data) {
+      console.log(`Debug API: No user found with email: ${email}`)
       return { success: false, error: "User not found" }
     }
+
+    console.log(`Debug API: Found user: ${data.id}`)
+    console.log(`Debug API: User preferences:`, data.preferences)
 
     return {
       success: true,
@@ -83,6 +89,7 @@ async function lookupUser(email: string) {
       preferencesFormat: data.preferences?.format || null,
     }
   } catch (error) {
+    console.log(`Debug API: Error in lookupUser: ${error instanceof Error ? error.message : "Unknown error"}`)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

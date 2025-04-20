@@ -106,8 +106,10 @@ export default function SubscriptionForm() {
         throw new Error(data.error || "Subscription failed")
       }
 
-      // Pass the message to the success page
-      router.push(`/success?message=${encodeURIComponent(data.message)}&isUpdate=${data.isUpdate}`)
+      // Pass the message and email to the success page
+      router.push(
+        `/success?message=${encodeURIComponent(data.message)}&isUpdate=${data.isUpdate}&email=${encodeURIComponent(email)}`,
+      )
     } catch (err) {
       console.error("Subscription error:", err)
       setError(err instanceof Error ? err.message : "An unexpected error occurred")

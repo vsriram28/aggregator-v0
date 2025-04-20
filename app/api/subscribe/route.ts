@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         ? "Your subscription has been updated successfully!"
         : "Your subscription has been created successfully!",
       isUpdate: !!existingUser,
+      email: user.email, // Include the email in the response
     })
   } catch (error) {
     console.error("Subscription error:", error)
