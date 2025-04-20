@@ -24,8 +24,12 @@ export async function GET() {
 
     for (const user of users) {
       try {
-        // For weekly digests, we might want to fetch more articles
-        const articles = await fetchNewsForTopics(user.preferences.topics, 15) // Fetch more articles for weekly digest
+        // For weekly digests, we might want to fetch more articles, including preferred sources
+        const articles = await fetchNewsForTopics(
+          user.preferences.topics,
+          15, // Fetch more articles for weekly digest
+          user.preferences.sources, // Pass the user's preferred sources
+        )
 
         if (articles.length === 0) {
           console.log(`No articles found for user ${user.id} with topics: ${user.preferences.topics.join(", ")}`)

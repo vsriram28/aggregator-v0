@@ -35,8 +35,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generating welcome digest for user: ${user.email}`)
 
-    // Fetch news based on user preferences
-    const articles = await fetchNewsForTopics(user.preferences.topics)
+    // Fetch news based on user preferences, including preferred sources
+    const articles = await fetchNewsForTopics(
+      user.preferences.topics,
+      5, // articles per topic
+      user.preferences.sources, // Pass the user's preferred sources
+    )
 
     if (articles.length === 0) {
       console.log(`No articles found for user ${userId} with topics: ${user.preferences.topics.join(", ")}`)

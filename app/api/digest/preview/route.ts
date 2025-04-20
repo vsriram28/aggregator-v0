@@ -12,7 +12,14 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await getUserByEmail(email)
-    const articles = await fetchNewsForTopics(user.preferences.topics)
+
+    // Fetch news based on user preferences, including preferred sources
+    const articles = await fetchNewsForTopics(
+      user.preferences.topics,
+      3, // Fewer articles for preview
+      user.preferences.sources, // Pass the user's preferred sources
+    )
+
     const digest = await generatePersonalizedDigest(articles, user.preferences)
 
     return NextResponse.json({ digest })

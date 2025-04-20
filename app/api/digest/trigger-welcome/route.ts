@@ -24,8 +24,13 @@ export async function GET(request: Request) {
       const user = await getUserByEmail(email)
       console.log(`Found user: ${user.id} (${user.email})`)
 
-      // Fetch news based on user preferences
-      const articles = await fetchNewsForTopics(user.preferences.topics)
+      // Fetch news based on user preferences, including preferred sources
+      const articles = await fetchNewsForTopics(
+        user.preferences.topics,
+        5, // articles per topic
+        user.preferences.sources, // Pass the user's preferred sources
+      )
+
       console.log(`Fetched ${articles.length} articles for topics: ${user.preferences.topics.join(", ")}`)
 
       if (articles.length === 0) {

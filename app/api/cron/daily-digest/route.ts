@@ -24,8 +24,12 @@ export async function GET() {
 
     for (const user of users) {
       try {
-        // Fetch news based on user preferences
-        const articles = await fetchNewsForTopics(user.preferences.topics)
+        // Fetch news based on user preferences, including preferred sources
+        const articles = await fetchNewsForTopics(
+          user.preferences.topics,
+          5, // articles per topic
+          user.preferences.sources, // Pass the user's preferred sources
+        )
 
         if (articles.length === 0) {
           console.log(`No articles found for user ${user.id} with topics: ${user.preferences.topics.join(", ")}`)
