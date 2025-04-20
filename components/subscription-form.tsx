@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, InfoIcon } from "lucide-react"
 import type { UserPreferences } from "@/lib/db-schema"
 
 // Available topics for selection
@@ -44,6 +46,9 @@ export default function SubscriptionForm() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [info, setInfo] = useState("")
+  const [existingUser, setExistingUser] = useState(false)
+  const [userId, setUserId] = useState("")
 
   // Form state
   const [email, setEmail] = useState("")
@@ -52,6 +57,50 @@ export default function SubscriptionForm() {
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily")
   const [format, setFormat] = useState<"short" | "detailed">("short")
+
+  // Check if email exists when user enters email
+  const checkExistingUser = async () => {
+    if (!email) return
+
+    setLoading(true)
+    setError("")
+    setInfo("")
+
+    try {
+      console.log("Checking if email exists:", email)
+      const response = await fetch(`/api/debug-simple?email=${encodeURIComponent(email)}`)
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("API response:", data)
+
+      if (data.user && data.user.success) {
+        console.log("User found:", data.user)
+        setExistingUser(true)
+        setUserId(data.user.id)
+        setName(data.user.name || "")
+
+        // Load existing preferences
+        setSelectedTopics(data.user.preferencesTopics || [])
+        setSelectedSources(data.user.preferencesSources || [])
+        setFrequency(data.user.preferencesFrequency || "daily")
+        setFormat(data.user.preferencesFormat || "short")
+
+        setInfo("We found your existing subscription. Your preferences have been loaded.")
+      } else {
+        console.log("New user")
+        setExistingUser(false)
+      }
+    } catch (err) {
+      console.error("Error checking existing user:", err)
+      // Don't show error for new users
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Handle topic selection
   const handleTopicChange = (topic: string, checked: boolean) => {
@@ -94,7 +143,7 @@ export default function SubscriptionForm() {
         format,
       }
 
-      console.log("Submitting subscription with email:", email)
+      console.log(`Submitting subscription with email: ${email}, existing user: ${existingUser}`)
 
       const response = await fetch("/api/subscribe", {
         method: "POST",
@@ -121,6 +170,27 @@ export default function SubscriptionForm() {
     }
   }
 
+  // Handle next step with email check
+  const handleNextStep = async () => {
+    if (!email) {
+      setError("Please enter your email address")
+      return
+    }
+
+    if (!name) {
+      setError("Please enter your name")
+      return
+    }
+
+    setError("")
+
+    // Check if user exists before proceeding
+    await checkExistingUser()
+
+    // Move to next step
+    setStep(2)
+  }
+
   return (
     <div>
       {step === 1 && (
@@ -144,27 +214,30 @@ export default function SubscriptionForm() {
             <Input id="name" placeholder="Your Name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
-          <Button
-            className="w-full"
-            onClick={() => {
-              if (!email || !name) {
-                setError("Please fill in all fields")
-                return
-              }
-              setError("")
-              setStep(2)
-            }}
-          >
-            Next
+          <Button className="w-full" onClick={handleNextStep} disabled={loading}>
+            {loading ? "Checking..." : "Next"}
           </Button>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-4">
           <h2 className="text-2xl font-semibold mb-4">Select Your Interests</h2>
+
+          {info && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <InfoIcon className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">{info}</AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-2">
             <Label>Topics (select at least one)</Label>
@@ -220,7 +293,13 @@ export default function SubscriptionForm() {
             </Button>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
 
@@ -261,11 +340,17 @@ export default function SubscriptionForm() {
               Back
             </Button>
             <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? "Subscribing..." : "Subscribe"}
+              {loading ? "Subscribing..." : existingUser ? "Update Preferences" : "Subscribe"}
             </Button>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
     </div>

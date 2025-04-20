@@ -1,11 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { PreferencesForm } from "@/components/preferences-form"
 import { ExistingUserForm } from "./existing-user-form"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 export default function PreferencesPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const email = searchParams.get("email")
   const userId = searchParams.get("userId")
@@ -71,7 +74,30 @@ export default function PreferencesPage() {
               <ExistingUserForm />
             </div>
           ) : error ? (
-            <div className="text-red-500 mb-4">Error: {error}</div>
+            <div>
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+              <p className="text-gray-600 mb-4">
+                We couldn't find your subscription. Please check your email address or subscribe from the home page.
+              </p>
+              <div className="flex justify-between">
+                <button
+                  onClick={() => router.push("/")}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Go to Home Page
+                </button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
           ) : (
             <PreferencesForm
               userId={userData?.id || userId}
