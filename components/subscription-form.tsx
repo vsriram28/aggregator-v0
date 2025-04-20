@@ -94,6 +94,8 @@ export default function SubscriptionForm() {
         format,
       }
 
+      console.log("Submitting subscription with email:", email)
+
       const response = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,6 +107,8 @@ export default function SubscriptionForm() {
       if (!response.ok) {
         throw new Error(data.error || "Subscription failed")
       }
+
+      console.log("Subscription successful, redirecting with email:", email)
 
       // Pass the message and email to the success page
       router.push(

@@ -1,5 +1,7 @@
 import SubscriptionForm from "@/components/subscription-form"
 import { getPopularTopics, getUserCount } from "@/lib/user-service"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default async function HomePage() {
   // Add error handling for data fetching
@@ -27,6 +29,26 @@ export default async function HomePage() {
 
           <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
             <SubscriptionForm />
+          </div>
+
+          {/* Add a section for existing users */}
+          <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
+            <h2 className="text-2xl font-semibold mb-4">Already Subscribed?</h2>
+            <p className="text-gray-600 mb-4">
+              If you're already subscribed, you can manage your preferences or view a preview of your digest.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/preferences" className="flex-1">
+                <Button variant="outline" className="w-full">
+                  Manage Preferences
+                </Button>
+              </Link>
+              <Link href="/preview" className="flex-1">
+                <Button variant="outline" className="w-full">
+                  View Digest Preview
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
