@@ -4,10 +4,18 @@ import type { User } from "./db-schema"
 // Get all users with a specific frequency preference
 export async function getUsersByFrequency(frequency: "daily" | "weekly") {
   try {
-    // Fix the JSON query syntax
-    const { data, error } = await supabase.from("users").select("*").eq("preferences->frequency", frequency) // This is the correct syntax for PostgreSQL JSON queries
+    console.log(`Looking for users with ${frequency} frequency preference`)
 
-    if (error) throw error
+    // This is the correct syntax for PostgreSQL JSON queries
+    // Using ->> instead of -> to get the text value for comparison
+    const { data, error } = await supabase.from("users").select("*").eq("preferences->>frequency", frequency)
+
+    if (error) {
+      console.error(`Error in getUsersByFrequency query:`, error)
+      throw error
+    }
+
+    console.log(`Found ${data?.length || 0} users with ${frequency} frequency`)
     return data as User[]
   } catch (error) {
     console.error("Error fetching users by frequency:", error)
