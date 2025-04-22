@@ -39,8 +39,9 @@ const SOURCE_NAME_MAPPINGS: Record<string, string[]> = {
 
 // Fetch news from News API
 async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], pageSize = 5) {
-  // We'll fetch more articles than needed to ensure we have enough after filtering by source
-  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=${pageSize * 2}&apiKey=${NEWS_API_KEY}`
+  // Increase the fetch count to 50 articles per topic
+  // We'll fetch 50 articles instead of pageSize * 2 to have a much larger pool
+  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=50&apiKey=${NEWS_API_KEY}`
 
   try {
     const response = await fetch(url)
@@ -52,6 +53,9 @@ async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], 
     }
 
     const data = (await response.json()) as NewsAPIResponse
+
+    // Log the total number of articles fetched
+    console.log(`Fetched ${data.articles.length} articles for topic "${query}" from News API`)
 
     // If no preferred sources specified, return all articles (limited to pageSize)
     if (!preferredSources.length) {
