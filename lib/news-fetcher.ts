@@ -39,8 +39,7 @@ const SOURCE_NAME_MAPPINGS: Record<string, string[]> = {
 
 // Fetch news from News API
 async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], pageSize = 5) {
-  // Increase the fetch count to 50 articles per topic
-  // We'll fetch 50 articles instead of pageSize * 2 to have a much larger pool
+  // Fetch 50 articles to have a large pool for filtering
   const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=50&apiKey=${NEWS_API_KEY}`
 
   try {
@@ -82,10 +81,24 @@ async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], 
       `Filtered from ${data.articles.length} to ${filteredArticles.length} articles matching preferred sources`,
     )
 
-    // If we have too few articles after filtering, we might need to fetch more in a real app
-    // For now, just return what we have, limited to pageSize
-    const limitedArticles = filteredArticles.slice(0, pageSize)
+    // FALLBACK MECHANISM: If filtering results in 0 articles, use all articles
+    if (filteredArticles.length === 0) {
+      console.log(
+        `No articles found matching preferred sources for topic "${query}". Falling back to all available articles.`,
+      )
 
+      // Log the actual source names to help with debugging
+      const sourceNames = data.articles.map((article) => article.source.name)
+      const uniqueSourceNames = [...new Set(sourceNames)]
+      console.log(`Available sources for topic "${query}": ${uniqueSourceNames.join(", ")}`)
+
+      // Return all articles, limited to pageSize
+      const fallbackArticles = data.articles.slice(0, pageSize)
+      return mapToNewsArticles(fallbackArticles, query)
+    }
+
+    // If we have articles after filtering, return them (limited to pageSize)
+    const limitedArticles = filteredArticles.slice(0, pageSize)
     return mapToNewsArticles(limitedArticles, query)
   } catch (error) {
     console.error(`Error fetching news for query "${query}":`, error)
