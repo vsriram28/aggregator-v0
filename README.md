@@ -1,14 +1,8 @@
-# Aggregator
-
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
-
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/vsriram28-gmailcoms-projects/v0-aggregator)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/RoTM2y7CXmh)
+# Personal News Aggregator
 
 ## Overview
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+A simple digest that helps to get headlines on topics from your trusted news sources.
 
 ## Deployment
 
@@ -16,15 +10,11 @@ Your project is live at:
 
 **[https://vercel.com/vsriram28-gmailcoms-projects/v0-aggregator](https://vercel.com/vsriram28-gmailcoms-projects/v0-aggregator)**
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/RoTM2y7CXmh](https://v0.dev/chat/projects/RoTM2y7CXmh)**
-
 ## How It Works
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+1. Access the Application home page
+2. Provide your name and email id where you would like to receive the digest
+3. Select the Topics and the news sources
+4. Select Daily or Weekly digests and simple or detailed content
+5. Submit your preferences.
+6. You will get the daily and weekly digests at 11 am Pacific.
