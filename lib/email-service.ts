@@ -115,7 +115,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       background-color: #f8fff0; /* Light lime background */
     }
     .container {
-      background-color: #ffffff;
+      background-color: #edffe5; /* Light lime background for content */
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 25px;
@@ -132,7 +132,10 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
     .article { 
       margin-bottom: 25px; 
       border-bottom: 1px solid #e0e0e0; 
-      padding-bottom: 15px; 
+      padding-bottom: 15px;
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 4px;
     }
     .article-title { 
       font-weight: bold; 
