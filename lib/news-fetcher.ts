@@ -37,10 +37,20 @@ const SOURCE_NAME_MAPPINGS: Record<string, string[]> = {
   "PBS.org": ["PBS", "PBS News", "PBS.org", "PBS NewsHour"],
 }
 
+// Get date from 36 hours ago
+function getDateFrom36HoursAgo(): string {
+  const date = new Date()
+  date.setHours(date.getHours() - 36)
+  return date.toISOString()
+}
+
 // Fetch news from News API
 async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], pageSize = 5) {
-  // Fetch 50 articles to have a large pool for filtering
-  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=50&apiKey=${NEWS_API_KEY}`
+  // Get date from 36 hours ago
+  const fromDate = getDateFrom36HoursAgo()
+
+  // Fetch 50 articles to have a large pool for filtering, and include the from parameter
+  const url = `${NEWS_API_URL}/everything?q=${encodeURIComponent(query)}&pageSize=50&from=${fromDate}&apiKey=${NEWS_API_KEY}`
 
   try {
     const response = await fetch(url)
@@ -54,16 +64,32 @@ async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], 
     const data = (await response.json()) as NewsAPIResponse
 
     // Log the total number of articles fetched
-    console.log(`Fetched ${data.articles.length} articles for topic "${query}" from News API`)
+    console.log(`Fetched ${data.articles.length} articles for topic "${query}" from News API (from ${fromDate})`)
+
+    // Filter articles by publication date (last 36 hours)
+    const cutoffTime = new Date()
+    cutoffTime.setHours(cutoffTime.getHours() - 36)
+
+    const recentArticles = data.articles.filter((article) => {
+      const publishDate = new Date(article.publishedAt)
+      return publishDate >= cutoffTime
+    })
+
+    console.log(`Filtered to ${recentArticles.length} articles published in the last 36 hours`)
+
+    // If no articles found within the time window, return empty array
+    if (recentArticles.length === 0) {
+      return []
+    }
 
     // If no preferred sources specified, return all articles (limited to pageSize)
     if (!preferredSources.length) {
-      const limitedArticles = data.articles.slice(0, pageSize)
+      const limitedArticles = recentArticles.slice(0, pageSize)
       return mapToNewsArticles(limitedArticles, query)
     }
 
     // Filter articles by preferred sources
-    const filteredArticles = data.articles.filter((article) => {
+    const filteredArticles = recentArticles.filter((article) => {
       const sourceName = article.source.name
 
       // Check if this source matches any of the user's preferred sources
@@ -78,7 +104,7 @@ async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], 
     })
 
     console.log(
-      `Filtered from ${data.articles.length} to ${filteredArticles.length} articles matching preferred sources`,
+      `Filtered from ${recentArticles.length} to ${filteredArticles.length} articles matching preferred sources`,
     )
 
     // FALLBACK MECHANISM: If filtering results in 0 articles, use all articles
@@ -88,12 +114,12 @@ async function fetchFromNewsAPI(query: string, preferredSources: string[] = [], 
       )
 
       // Log the actual source names to help with debugging
-      const sourceNames = data.articles.map((article) => article.source.name)
+      const sourceNames = recentArticles.map((article) => article.source.name)
       const uniqueSourceNames = [...new Set(sourceNames)]
       console.log(`Available sources for topic "${query}": ${uniqueSourceNames.join(", ")}`)
 
       // Return all articles, limited to pageSize
-      const fallbackArticles = data.articles.slice(0, pageSize)
+      const fallbackArticles = recentArticles.slice(0, pageSize)
       return mapToNewsArticles(fallbackArticles, query)
     }
 

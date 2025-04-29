@@ -98,6 +98,34 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       ? "Your Updated News Digest"
       : "Your Personalized News Digest"
 
+  // Generate articles HTML or no articles message
+  let articlesHtml = ""
+  if (digest.articles.length === 0) {
+    articlesHtml = `
+      <div style="background-color: #edffe5; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;">
+        <p style="font-size: 16px; color: #555;">No new articles matching your preferences were published in the last 36 hours.</p>
+        <p style="font-size: 14px; color: #777;">We'll check again for your next scheduled digest.</p>
+      </div>
+    `
+  } else {
+    articlesHtml = `
+      <div class="articles">
+        ${digest.articles
+          .map(
+            (article) => `
+          <div class="article">
+            <div class="article-title">${article.title}</div>
+            <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
+            <div class="article-summary">${article.summary}</div>
+            <a href="${article.url}" class="article-link">Read full article →</a>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    `
+  }
+
   return `
 <!DOCTYPE html>
 <html>
@@ -115,7 +143,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       background-color: #f8fff0; /* Light lime background */
     }
     .container {
-      background-color: #f8fff5; /* Light lime background for content */
+      background-color: #edffe5; /* Light lime background for content */
       border-radius: 8px;
       box-shadow: 10px 10px 5px #e8e8e8;
       padding: 25px;
@@ -133,7 +161,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-bottom: 25px; 
       border-bottom: 1px solid #e0e0e0; 
       padding-bottom: 15px;
-      background-color: #f8fff5; /* Same as container background */
+      background-color: #edffe5; /* Same as container background */
       padding: 15px;
       border-radius: 4px;
     }
@@ -161,7 +189,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-top: 30px; 
       font-size: 0.9em; 
       color: #7f8c8d; 
-      background-color: #f8fff5 /* Very light lime footer */
+      background-color: #edffe5; /* Very light lime footer */
       padding: 15px;
       border-radius: 4px;
     }
@@ -189,20 +217,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
     
     <p>${digest.summary}</p>
     
-    <div class="articles">
-      ${digest.articles
-        .map(
-          (article) => `
-        <div class="article">
-          <div class="article-title">${article.title}</div>
-          <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
-          <div class="article-summary">${article.summary}</div>
-          <a href="${article.url}" class="article-link">Read full article →</a>
-        </div>
-      `,
-        )
-        .join("")}
-    </div>
+    ${articlesHtml}
     
     <div class="footer">
       <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>

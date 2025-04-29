@@ -63,6 +63,15 @@ export async function generatePersonalizedDigest(
       `Generating digest for ${userName}, isWelcomeDigest: ${isWelcomeDigest}, isPreferencesUpdated: ${isPreferencesUpdated}`,
     )
 
+    // Handle case when no articles are found
+    if (articles.length === 0) {
+      console.log("No articles found for digest generation")
+      return {
+        introduction: `Hello ${userName}, we couldn't find any new articles matching your preferences published in the last 36 hours. We'll check again for your next scheduled digest.`,
+        articles: [],
+      }
+    }
+
     // First, summarize each article if not already summarized
     const summarizedArticles = await Promise.all(
       articles.map(async (article) => {
