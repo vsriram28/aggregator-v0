@@ -25,6 +25,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Tasks to do
-tasks-ToDo.txt

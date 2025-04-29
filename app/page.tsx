@@ -61,14 +61,8 @@ export default async function HomePage() {
             </div>
 
             <div className="bg-white rounded-xl shadow p-6">
-              <h2 className="text-2xl font-semibold mb-4">Community Stats</h2>
-              <div className="mb-6">
-                <p className="text-gray-600 mb-2">Subscribers</p>
-                <p className="text-3xl font-bold text-gray-900">{userCount.toLocaleString()}+</p>
-              </div>
-
+              <h2 className="text-2xl font-semibold mb-4">Popular Topics</h2>
               <div>
-                <p className="text-gray-600 mb-2">Popular Topics</p>
                 <div className="flex flex-wrap gap-2">
                   {popularTopics.map(({ topic }) => (
                     <span key={topic} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
