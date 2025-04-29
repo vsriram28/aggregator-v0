@@ -114,24 +114,24 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
         padding: 20px; 
         background-color: #f8fff0; /* Light lime background */
       }
-      
-      /* Add this new style for the top border */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
       .top-border {
         height: 5px;
         background-color: #8bc34a;
-        border-radius: 5px 5px 0 0;
-        margin-bottom: -1px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
       }
       .container {
         background-color: #ffffff;
         border-radius: 8px;
-        box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      .content {
         padding: 25px;
-        border-top: 5px solid #8bc34a; /* Lime accent border */
-        border-left: 1px solid #e0e0e0; /* Left vertical boundary */
-        border-right: 1px solid #e0e0e0; /* Right vertical boundary */
-        max-width: 580px;
-        margin: 0 auto;
       }
       h1 { 
         color: #2c3e50; 
@@ -141,10 +141,10 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       }
       .article { 
         margin-bottom: 25px; 
-        border-bottom: 1px solid #e0e0e0; 
         padding-bottom: 15px; 
-        background-color: #ffffff;
-        border-radius: 4px;
+      }
+      .article:not(:last-child) {
+        border-bottom: 1px solid #e0e0e0;
       }
       .article-title { 
         font-weight: bold; 
@@ -179,6 +179,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
         font-size: 0.8em; 
         color: #95a5a6; 
         text-align: center; 
+        padding: 10px;
       }
       .unsubscribe a { 
         color: #95a5a6; 
@@ -187,40 +188,56 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       .unsubscribe a:hover { 
         text-decoration: underline; 
       }
+      .divider {
+        border-bottom: 1px solid #e0e0e0;
+        margin: 15px 0;
+      }
+      .preferences-link {
+        color: #8bc34a;
+        text-decoration: none;
+      }
+      .preferences-link:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
-    <div class="top-border"></div>
-    <div class="container">
-      <h1>${emailTitle}</h1>
-      <p>Hello ${user.name},</p>
-      
-      ${specialHeader}
-      
-      <p>${digest.summary}</p>
-      
-      <div class="articles">
-        ${digest.articles
-          .map(
-            (article) => `
-          <div class="article">
-            <div class="article-title">${article.title}</div>
-            <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
-            <div class="article-summary">${article.summary}</div>
-            <a href="${article.url}" class="article-link">Read full article →</a>
+    <div class="email-container">
+      <div class="container">
+        <div class="top-border"></div>
+        <div class="content">
+          <h1>${emailTitle}</h1>
+          <p>Hello ${user.name},</p>
+          
+          ${specialHeader}
+          
+          <p>${digest.summary}</p>
+          
+          <div class="articles">
+            ${digest.articles
+              .map(
+                (article, index, array) => `
+              <div class="article">
+                <div class="article-title">${article.title}</div>
+                <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
+                <div class="article-summary">${article.summary}</div>
+                <a href="${article.url}" class="article-link">Read full article →</a>
+              </div>
+              ${index < array.length - 1 ? '<div class="divider"></div>' : ""}
+            `,
+              )
+              .join("")}
           </div>
-        `,
-          )
-          .join("")}
-      </div>
-      
-      <div class="footer">
-        <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
-        <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here</a>.</p>
-      </div>
-      
-      <div class="unsubscribe">
-        <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
+          
+          <div class="footer">
+            <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
+            <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="preferences-link">click here</a>.</p>
+          </div>
+          
+          <div class="unsubscribe">
+            <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
+          </div>
+        </div>
       </div>
     </div>
   </body>
@@ -266,24 +283,24 @@ function createConfirmationEmailHtml(user: User) {
         padding: 20px; 
         background-color: #f8fff0; /* Light lime background */
       }
-      
-      /* Add this new style for the top border */
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
       .top-border {
         height: 5px;
         background-color: #8bc34a;
-        border-radius: 5px 5px 0 0;
-        margin-bottom: -1px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
       }
       .container {
         background-color: #ffffff;
         border-radius: 8px;
-        box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      .content {
         padding: 25px;
-        border-top: 5px solid #8bc34a; /* Lime accent border */
-        border-left: 1px solid #e0e0e0; /* Left vertical boundary */
-        border-right: 1px solid #e0e0e0; /* Right vertical boundary */
-        max-width: 580px;
-        margin: 0 auto;
       }
       h1 { 
         color: #2c3e50; 
@@ -344,32 +361,36 @@ function createConfirmationEmailHtml(user: User) {
     </style>
   </head>
   <body>
-    <div class="top-border"></div>
-    <div class="container">
-      <h1>Welcome to News Digest!</h1>
-      <p>Hello ${user.name},</p>
-      
-      <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed!</p>
-      
-      <div class="highlight">
-        <p><strong>Your welcome digest is being prepared and will be delivered shortly.</strong></p>
-        <p>${nextDigestInfo}</p>
-      </div>
-      
-      <div class="preferences">
-        <h3>Your Preferences</h3>
-        <ul>
-          <li><strong>Topics:</strong> ${topicsString}</li>
-          <li><strong>Sources:</strong> ${sourcesString}</li>
-          <li><strong>Frequency:</strong> ${frequencyText}</li>
-          <li><strong>Format:</strong> ${formatText}</li>
-        </ul>
-      </div>
-      
-      <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
-      
-      <div class="footer">
-        <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here to unsubscribe</a>.</p>
+    <div class="email-container">
+      <div class="container">
+        <div class="top-border"></div>
+        <div class="content">
+          <h1>Welcome to News Digest!</h1>
+          <p>Hello ${user.name},</p>
+          
+          <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed!</p>
+          
+          <div class="highlight">
+            <p><strong>Your welcome digest is being prepared and will be delivered shortly.</strong></p>
+            <p>${nextDigestInfo}</p>
+          </div>
+          
+          <div class="preferences">
+            <h3>Your Preferences</h3>
+            <ul>
+              <li><strong>Topics:</strong> ${topicsString}</li>
+              <li><strong>Sources:</strong> ${sourcesString}</li>
+              <li><strong>Frequency:</strong> ${frequencyText}</li>
+              <li><strong>Format:</strong> ${formatText}</li>
+            </ul>
+          </div>
+          
+          <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
+          
+          <div class="footer">
+            <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here to unsubscribe</a>.</p>
+          </div>
+        </div>
       </div>
     </div>
   </body>
