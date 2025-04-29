@@ -133,7 +133,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-bottom: 25px; 
       border-bottom: 1px solid #e0e0e0; 
       padding-bottom: 15px;
-      background-color: #ffffff;
+      background-color: #edffe5; /* Same as container background */
       padding: 15px;
       border-radius: 4px;
     }
