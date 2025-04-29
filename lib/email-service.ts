@@ -117,7 +117,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
     .container {
       background-color: #edffe5; /* Light lime background for content */
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 10px 10px 5px #e8e8e8;
       padding: 25px;
       border-top: 5px solid #8bc34a; /* Lime accent border */
       max-width: 580px;
