@@ -115,7 +115,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       background-color: #f8fff0; /* Light lime background */
     }
     .container {
-      background-color: #edffe5; /* Light lime background for content */
+      background-color: #f8fff5; /* Light lime background for content */
       border-radius: 8px;
       box-shadow: 10px 10px 5px #e8e8e8;
       padding: 25px;
@@ -133,7 +133,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-bottom: 25px; 
       border-bottom: 1px solid #e0e0e0; 
       padding-bottom: 15px;
-      background-color: #edffe5; /* Same as container background */
+      background-color: #f8fff5; /* Same as container background */
       padding: 15px;
       border-radius: 4px;
     }
@@ -161,7 +161,7 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-top: 30px; 
       font-size: 0.9em; 
       color: #7f8c8d; 
-      background-color: #f1f8e9; /* Very light lime footer */
+      background-color: #f8fff5 /* Very light lime footer */
       padding: 15px;
       border-radius: 4px;
     }
