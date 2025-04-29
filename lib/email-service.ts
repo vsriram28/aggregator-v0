@@ -114,22 +114,12 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       padding: 20px; 
       background-color: #f8fff0; /* Light lime background */
     }
-    
-    /* Add this new style for the top border */
-    .top-border {
-      height: 5px;
-      background-color: #8bc34a;
-      border-radius: 5px 5px 0 0;
-      margin-bottom: -1px;
-    }
     .container {
       background-color: #ffffff;
       border-radius: 8px;
-      box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 25px;
       border-top: 5px solid #8bc34a; /* Lime accent border */
-      border-left: 1px solid #e0e0e0; /* Left vertical boundary */
-      border-right: 1px solid #e0e0e0; /* Right vertical boundary */
       max-width: 580px;
       margin: 0 auto;
     }
@@ -143,8 +133,6 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       margin-bottom: 25px; 
       border-bottom: 1px solid #e0e0e0; 
       padding-bottom: 15px; 
-      background-color: #ffffff;
-      border-radius: 4px;
     }
     .article-title { 
       font-weight: bold; 
@@ -190,7 +178,6 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
   </style>
 </head>
 <body>
-  <div class="top-border"></div>
   <div class="container">
     <h1>${emailTitle}</h1>
     <p>Hello ${user.name},</p>
@@ -266,22 +253,12 @@ function createConfirmationEmailHtml(user: User) {
       padding: 20px; 
       background-color: #f8fff0; /* Light lime background */
     }
-    
-    /* Add this new style for the top border */
-    .top-border {
-      height: 5px;
-      background-color: #8bc34a;
-      border-radius: 5px 5px 0 0;
-      margin-bottom: -1px;
-    }
     .container {
       background-color: #ffffff;
       border-radius: 8px;
-      box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       padding: 25px;
       border-top: 5px solid #8bc34a; /* Lime accent border */
-      border-left: 1px solid #e0e0e0; /* Left vertical boundary */
-      border-right: 1px solid #e0e0e0; /* Right vertical boundary */
       max-width: 580px;
       margin: 0 auto;
     }
@@ -344,7 +321,6 @@ function createConfirmationEmailHtml(user: User) {
   </style>
 </head>
 <body>
-  <div class="top-border"></div>
   <div class="container">
     <h1>Welcome to News Digest!</h1>
     <p>Hello ${user.name},</p>
