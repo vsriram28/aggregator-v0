@@ -99,149 +99,132 @@ function createDigestEmailHtml(user: User, digest: NewsDigest, isWelcomeDigest =
       : "Your Personalized News Digest"
 
   return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="utf-8">
-    <title>${emailTitle}</title>
-    <style>
-      body { 
-        font-family: Arial, sans-serif; 
-        line-height: 1.6; 
-        color: #333; 
-        max-width: 600px; 
-        margin: 0 auto; 
-        padding: 20px; 
-        background-color: #f8fff0; /* Light lime background */
-      }
-      .email-container {
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      .top-border {
-        height: 5px;
-        background-color: #8bc34a;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
-      }
-      .container {
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        overflow: hidden;
-      }
-      .content {
-        padding: 25px;
-      }
-      h1 { 
-        color: #2c3e50; 
-        margin-top: 0;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #e8f5e9; /* Very light green border */
-      }
-      .article { 
-        margin-bottom: 25px; 
-        padding-bottom: 15px; 
-      }
-      .article:not(:last-child) {
-        border-bottom: 1px solid #e0e0e0;
-      }
-      .article-title { 
-        font-weight: bold; 
-        margin-bottom: 5px; 
-        color: #3c4043;
-      }
-      .article-source { 
-        color: #7f8c8d; 
-        font-size: 0.9em; 
-        margin-bottom: 10px; 
-      }
-      .article-summary { 
-        margin-bottom: 10px; 
-      }
-      .article-link { 
-        color: #8bc34a; /* Lime link color */
-        text-decoration: none; 
-      }
-      .article-link:hover { 
-        text-decoration: underline; 
-      }
-      .footer { 
-        margin-top: 30px; 
-        font-size: 0.9em; 
-        color: #7f8c8d; 
-        background-color: #f1f8e9; /* Very light lime footer */
-        padding: 15px;
-        border-radius: 4px;
-      }
-      .unsubscribe { 
-        margin-top: 20px; 
-        font-size: 0.8em; 
-        color: #95a5a6; 
-        text-align: center; 
-        padding: 10px;
-      }
-      .unsubscribe a { 
-        color: #95a5a6; 
-        text-decoration: none; 
-      }
-      .unsubscribe a:hover { 
-        text-decoration: underline; 
-      }
-      .divider {
-        border-bottom: 1px solid #e0e0e0;
-        margin: 15px 0;
-      }
-      .preferences-link {
-        color: #8bc34a;
-        text-decoration: none;
-      }
-      .preferences-link:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="email-container">
-      <div class="container">
-        <div class="top-border"></div>
-        <div class="content">
-          <h1>${emailTitle}</h1>
-          <p>Hello ${user.name},</p>
-          
-          ${specialHeader}
-          
-          <p>${digest.summary}</p>
-          
-          <div class="articles">
-            ${digest.articles
-              .map(
-                (article, index, array) => `
-              <div class="article">
-                <div class="article-title">${article.title}</div>
-                <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
-                <div class="article-summary">${article.summary}</div>
-                <a href="${article.url}" class="article-link">Read full article →</a>
-              </div>
-              ${index < array.length - 1 ? '<div class="divider"></div>' : ""}
-            `,
-              )
-              .join("")}
-          </div>
-          
-          <div class="footer">
-            <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
-            <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="preferences-link">click here</a>.</p>
-          </div>
-          
-          <div class="unsubscribe">
-            <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
-          </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${emailTitle}</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      max-width: 600px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      background-color: #f8fff0; /* Light lime background */
+    }
+    
+    /* Add this new style for the top border */
+    .top-border {
+      height: 5px;
+      background-color: #8bc34a;
+      border-radius: 5px 5px 0 0;
+      margin-bottom: -1px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+      padding: 25px;
+      border-top: 5px solid #8bc34a; /* Lime accent border */
+      border-left: 1px solid #e0e0e0; /* Left vertical boundary */
+      border-right: 1px solid #e0e0e0; /* Right vertical boundary */
+      max-width: 580px;
+      margin: 0 auto;
+    }
+    h1 { 
+      color: #2c3e50; 
+      margin-top: 0;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e8f5e9; /* Very light green border */
+    }
+    .article { 
+      margin-bottom: 25px; 
+      border-bottom: 1px solid #e0e0e0; 
+      padding-bottom: 15px; 
+      background-color: #ffffff;
+      border-radius: 4px;
+    }
+    .article-title { 
+      font-weight: bold; 
+      margin-bottom: 5px; 
+      color: #3c4043;
+    }
+    .article-source { 
+      color: #7f8c8d; 
+      font-size: 0.9em; 
+      margin-bottom: 10px; 
+    }
+    .article-summary { 
+      margin-bottom: 10px; 
+    }
+    .article-link { 
+      color: #8bc34a; /* Lime link color */
+      text-decoration: none; 
+    }
+    .article-link:hover { 
+      text-decoration: underline; 
+    }
+    .footer { 
+      margin-top: 30px; 
+      font-size: 0.9em; 
+      color: #7f8c8d; 
+      background-color: #f1f8e9; /* Very light lime footer */
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .unsubscribe { 
+      margin-top: 20px; 
+      font-size: 0.8em; 
+      color: #95a5a6; 
+      text-align: center; 
+    }
+    .unsubscribe a { 
+      color: #95a5a6; 
+      text-decoration: none; 
+    }
+    .unsubscribe a:hover { 
+      text-decoration: underline; 
+    }
+  </style>
+</head>
+<body>
+  <div class="top-border"></div>
+  <div class="container">
+    <h1>${emailTitle}</h1>
+    <p>Hello ${user.name},</p>
+    
+    ${specialHeader}
+    
+    <p>${digest.summary}</p>
+    
+    <div class="articles">
+      ${digest.articles
+        .map(
+          (article) => `
+        <div class="article">
+          <div class="article-title">${article.title}</div>
+          <div class="article-source">From ${article.source} • ${new Date(article.publishedAt).toLocaleDateString()}</div>
+          <div class="article-summary">${article.summary}</div>
+          <a href="${article.url}" class="article-link">Read full article →</a>
         </div>
-      </div>
+      `,
+        )
+        .join("")}
     </div>
-  </body>
-  </html>
+    
+    <div class="footer">
+      <p>This digest was created based on your preferences: ${user.preferences.topics.join(", ")}</p>
+      <p>To update your preferences, <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here</a>.</p>
+    </div>
+    
+    <div class="unsubscribe">
+      <p>If you no longer wish to receive these emails, <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer">click here to unsubscribe</a>.</p>
+    </div>
+  </div>
+</body>
+</html>
 `
 }
 
@@ -268,133 +251,129 @@ function createConfirmationEmailHtml(user: User) {
   const formatText = user.preferences.format === "short" ? "short summaries" : "detailed analysis"
 
   return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Welcome to News Digest!</title>
-    <style>
-      body { 
-        font-family: Arial, sans-serif; 
-        line-height: 1.6; 
-        color: #333; 
-        max-width: 600px; 
-        margin: 0 auto; 
-        padding: 20px; 
-        background-color: #f8fff0; /* Light lime background */
-      }
-      .email-container {
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      .top-border {
-        height: 5px;
-        background-color: #8bc34a;
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
-      }
-      .container {
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        overflow: hidden;
-      }
-      .content {
-        padding: 25px;
-      }
-      h1 { 
-        color: #2c3e50; 
-        margin-top: 0;
-      }
-      .preferences { 
-        background-color: #f1f8e9; /* Very light lime background */
-        padding: 15px; 
-        border-radius: 5px; 
-        margin: 20px 0; 
-      }
-      .preferences h3 { 
-        margin-top: 0; 
-        color: #558b2f; /* Darker lime color */
-      }
-      .preferences ul { 
-        margin-bottom: 0; 
-      }
-      .button { 
-        display: inline-block; 
-        background-color: #8bc34a; /* Lime button */
-        color: white; 
-        padding: 10px 20px; 
-        text-decoration: none; 
-        border-radius: 5px; 
-        margin-top: 15px; 
-      }
-      .button:hover {
-        background-color: #7cb342; /* Slightly darker lime on hover */
-      }
-      .footer { 
-        margin-top: 30px; 
-        font-size: 0.9em; 
-        color: #7f8c8d; 
-        border-top: 1px solid #e8f5e9; /* Very light green border */
-        padding-top: 15px; 
-      }
-      .unsubscribe { 
-        margin-top: 20px; 
-        font-size: 0.8em; 
-        color: #95a5a6; 
-        text-align: center; 
-      }
-      .unsubscribe a { 
-        color: #95a5a6; 
-        text-decoration: none; 
-      }
-      .unsubscribe a:hover { 
-        text-decoration: underline; 
-      }
-      .highlight { 
-        background-color: #f1f8e9; /* Very light lime background */
-        padding: 15px; 
-        border-radius: 5px; 
-        margin: 20px 0; 
-        border-left: 4px solid #8bc34a; /* Lime accent border */
-      }
-    </style>
-  </head>
-  <body>
-    <div class="email-container">
-      <div class="container">
-        <div class="top-border"></div>
-        <div class="content">
-          <h1>Welcome to News Digest!</h1>
-          <p>Hello ${user.name},</p>
-          
-          <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed!</p>
-          
-          <div class="highlight">
-            <p><strong>Your welcome digest is being prepared and will be delivered shortly.</strong></p>
-            <p>${nextDigestInfo}</p>
-          </div>
-          
-          <div class="preferences">
-            <h3>Your Preferences</h3>
-            <ul>
-              <li><strong>Topics:</strong> ${topicsString}</li>
-              <li><strong>Sources:</strong> ${sourcesString}</li>
-              <li><strong>Frequency:</strong> ${frequencyText}</li>
-              <li><strong>Format:</strong> ${formatText}</li>
-            </ul>
-          </div>
-          
-          <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
-          
-          <div class="footer">
-            <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here to unsubscribe</a>.</p>
-          </div>
-        </div>
-      </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to News Digest!</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      line-height: 1.6; 
+      color: #333; 
+      max-width: 600px; 
+      margin: 0 auto; 
+      padding: 20px; 
+      background-color: #f8fff0; /* Light lime background */
+    }
+    
+    /* Add this new style for the top border */
+    .top-border {
+      height: 5px;
+      background-color: #8bc34a;
+      border-radius: 5px 5px 0 0;
+      margin-bottom: -1px;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.1); /* Stronger shadow on the right */
+      padding: 25px;
+      border-top: 5px solid #8bc34a; /* Lime accent border */
+      border-left: 1px solid #e0e0e0; /* Left vertical boundary */
+      border-right: 1px solid #e0e0e0; /* Right vertical boundary */
+      max-width: 580px;
+      margin: 0 auto;
+    }
+    h1 { 
+      color: #2c3e50; 
+      margin-top: 0;
+    }
+    .preferences { 
+      background-color: #f1f8e9; /* Very light lime background */
+      padding: 15px; 
+      border-radius: 5px; 
+      margin: 20px 0; 
+    }
+    .preferences h3 { 
+      margin-top: 0; 
+      color: #558b2f; /* Darker lime color */
+    }
+    .preferences ul { 
+      margin-bottom: 0; 
+    }
+    .button { 
+      display: inline-block; 
+      background-color: #8bc34a; /* Lime button */
+      color: white; 
+      padding: 10px 20px; 
+      text-decoration: none; 
+      border-radius: 5px; 
+      margin-top: 15px; 
+    }
+    .button:hover {
+      background-color: #7cb342; /* Slightly darker lime on hover */
+    }
+    .footer { 
+      margin-top: 30px; 
+      font-size: 0.9em; 
+      color: #7f8c8d; 
+      border-top: 1px solid #e8f5e9; /* Very light green border */
+      padding-top: 15px; 
+    }
+    .unsubscribe { 
+      margin-top: 20px; 
+      font-size: 0.8em; 
+      color: #95a5a6; 
+      text-align: center; 
+    }
+    .unsubscribe a { 
+      color: #95a5a6; 
+      text-decoration: none; 
+    }
+    .unsubscribe a:hover { 
+      text-decoration: underline; 
+    }
+    .highlight { 
+      background-color: #f1f8e9; /* Very light lime background */
+      padding: 15px; 
+      border-radius: 5px; 
+      margin: 20px 0; 
+      border-left: 4px solid #8bc34a; /* Lime accent border */
+    }
+  </style>
+</head>
+<body>
+  <div class="top-border"></div>
+  <div class="container">
+    <h1>Welcome to News Digest!</h1>
+    <p>Hello ${user.name},</p>
+    
+    <p>Thank you for subscribing to our personalized news digest service. Your subscription has been confirmed!</p>
+    
+    <div class="highlight">
+      <p><strong>Your welcome digest is being prepared and will be delivered shortly.</strong></p>
+      <p>${nextDigestInfo}</p>
     </div>
-  </body>
-  </html>
+    
+    <div class="preferences">
+      <h3>Your Preferences</h3>
+      <ul>
+        <li><strong>Topics:</strong> ${topicsString}</li>
+        <li><strong>Sources:</strong> ${sourcesString}</li>
+        <li><strong>Frequency:</strong> ${frequencyText}</li>
+        <li><strong>Format:</strong> ${formatText}</li>
+      </ul>
+    </div>
+    
+    <a href="${preferencesUrl}" target="_blank" rel="noopener noreferrer" class="button">Manage Your Preferences</a>
+    
+    <div class="footer">
+      <p>If you didn't sign up for this service, please <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #8bc34a;">click here to unsubscribe</a>.</p>
+    </div>
+  </div>
+</body>
+</html>
 `
 }
 
